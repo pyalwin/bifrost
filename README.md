@@ -6,8 +6,7 @@
 
 A native desktop UI for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) — chat, edit, and review code changes in one window.
 
-[![MIT License](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
-[![GitHub Stars](https://img.shields.io/github/stars/pyalwin/bifrost?style=flat&color=black)](https://github.com/pyalwin/bifrost/stargazers)
+[![MIT License](https://img.shields.io/badge/License-MIT-brightgreen.svg)](https://opensource.org/licenses/MIT)
 [![Built with Electron](https://img.shields.io/badge/Built_with-Electron-black.svg)](https://www.electronjs.org/)
 [![Powered by Claude](https://img.shields.io/badge/Powered_by-Claude_Code-black.svg)](https://docs.anthropic.com/en/docs/claude-code)
 
@@ -161,7 +160,7 @@ Contributions are welcome! Please open an issue first to discuss what you'd like
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://opensource.org/licenses/MIT)
 
 ## Acknowledgments
 
