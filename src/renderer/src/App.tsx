@@ -6,6 +6,8 @@ import {
   ResizablePanel,
   ResizableHandle
 } from './components/ui/resizable'
+import { ChatPanel } from './features/chat/ChatPanel'
+import { mockConversation } from './mocks/conversations'
 
 export default function App() {
   const { theme, toggleTheme } = useTheme()
@@ -30,9 +32,7 @@ export default function App() {
       />
       <ResizablePanelGroup direction="horizontal" className="flex-1">
         <ResizablePanel defaultSize={46} minSize={25}>
-          <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
-            Chat Panel
-          </div>
+          <ChatPanel messages={mockConversation.messages} />
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={54} minSize={30}>
