@@ -30,7 +30,7 @@ export function InputBox({ onSend, disabled = false }: Props) {
 
   return (
     <div className="px-5 pb-4 pt-3 border-t border-border">
-      <div className="border border-border rounded-xl overflow-hidden bg-background transition-shadow duration-200 focus-within:shadow-[0_0_0_1px_var(--primary)] focus-within:border-transparent">
+      <div className="max-w-[60%] mx-auto border border-border rounded-xl overflow-hidden bg-background transition-shadow duration-200 focus-within:shadow-[0_0_0_1px_var(--primary)] focus-within:border-transparent">
         <textarea
           ref={textareaRef}
           value={value}
