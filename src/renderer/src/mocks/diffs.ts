@@ -13,9 +13,38 @@ export const mockDiffs: DiffFileData[] = [
         lineNumber: 6,
         author: 'You',
         text: 'Should we keep both CTAs or just the primary?',
-        timestamp: 'just now',
+        timestamp: '2m ago',
         resolved: false,
-        replies: [],
+        replies: [
+          {
+            id: 'c1-r1',
+            lineNumber: 6,
+            author: 'Claude',
+            text: 'Both CTAs serve different intents — "Get started" for new users, "Download the CLI" for developers who already know what they want.',
+            timestamp: '1m ago',
+            resolved: false,
+            replies: [],
+          },
+        ],
+      },
+      {
+        id: 'c2',
+        lineNumber: 3,
+        author: 'You',
+        text: 'The title feels generic — can we make it more specific to what Codex does?',
+        timestamp: '5m ago',
+        resolved: true,
+        replies: [
+          {
+            id: 'c2-r1',
+            lineNumber: 3,
+            author: 'Claude',
+            text: 'Good point. Changed from "Codex" to "Codex app" to distinguish from the API.',
+            timestamp: '4m ago',
+            resolved: false,
+            replies: [],
+          },
+        ],
       },
     ],
     hunks: [
@@ -56,7 +85,17 @@ export const mockDiffs: DiffFileData[] = [
     additions: 1,
     deletions: 1,
     accepted: null,
-    comments: [],
+    comments: [
+      {
+        id: 'c3',
+        lineNumber: 2,
+        author: 'You',
+        text: 'Should this log message be more descriptive for debugging?',
+        timestamp: '3m ago',
+        resolved: false,
+        replies: [],
+      },
+    ],
     hunks: [
       {
         oldStart: 1,
