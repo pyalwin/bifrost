@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Folder, PanelLeftClose, Plus, ChevronDown, ChevronRight } from 'lucide-react'
+import { Folder, PanelLeftClose, SquarePen, Settings, Clock, Sparkles } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import type { SessionInfo } from '../../types'
 
@@ -28,7 +28,7 @@ function timeAgo(timestamp: number): string {
   const days = Math.floor(hours / 24)
   if (days < 7) return `${days}d`
   const weeks = Math.floor(days / 7)
-  if (weeks < 4) return `${weeks}w`
+  if (weeks < 5) return `${weeks}w`
   const months = Math.floor(days / 30)
   return `${months}mo`
 }
@@ -36,7 +36,6 @@ function timeAgo(timestamp: number): string {
 function extractProjectName(workingDir: string): string {
   const parts = workingDir.split('/').filter(Boolean)
   const name = parts.pop() ?? workingDir
-  // Skip generic names like "code", "src", "projects" — use parent + name
   if (['code', 'src', 'projects', 'repos', 'work', 'dev'].includes(name.toLowerCase()) && parts.length > 0) {
     return parts.pop() + '/' + name
   }
@@ -45,14 +44,11 @@ function extractProjectName(workingDir: string): string {
 
 function groupSessionsByProject(sessions: SessionInfo[]): ProjectGroup[] {
   const map = new Map<string, ProjectGroup>()
-
   for (const session of sessions) {
     const existing = map.get(session.workingDir)
     if (existing) {
       existing.sessions.push(session)
-      if (session.timestamp > existing.latestTimestamp) {
-        existing.latestTimestamp = session.timestamp
-      }
+      if (session.timestamp > existing.latestTimestamp) existing.latestTimestamp = session.timestamp
     } else {
       map.set(session.workingDir, {
         name: extractProjectName(session.workingDir),
@@ -62,92 +58,71 @@ function groupSessionsByProject(sessions: SessionInfo[]): ProjectGroup[] {
       })
     }
   }
-
-  for (const group of map.values()) {
-    group.sessions.sort((a, b) => b.timestamp - a.timestamp)
-  }
-
+  for (const group of map.values()) group.sessions.sort((a, b) => b.timestamp - a.timestamp)
   return Array.from(map.values()).sort((a, b) => b.latestTimestamp - a.latestTimestamp)
 }
 
-const MAX_VISIBLE = 5
+const MAX_VISIBLE = 10
 
 function ProjectRow({
-  group,
-  activeSessionId,
-  onResumeSession,
+  group, activeSessionId, onResumeSession,
 }: {
   group: ProjectGroup
   activeSessionId?: string | null
   onResumeSession: (sessionId: string, workingDir: string) => void
 }) {
-  const [expanded, setExpanded] = useState(true)
   const [showAll, setShowAll] = useState(false)
-
   const visible = showAll ? group.sessions : group.sessions.slice(0, MAX_VISIBLE)
   const remaining = group.sessions.length - MAX_VISIBLE
 
   return (
-    <div className="mb-0.5">
-      {/* Project header */}
-      <button
-        onClick={() => setExpanded(v => !v)}
-        className="w-full flex items-center gap-1.5 px-2 py-[5px] text-[11px] font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
-      >
-        {expanded
-          ? <ChevronDown className="w-2.5 h-2.5 shrink-0" />
-          : <ChevronRight className="w-2.5 h-2.5 shrink-0" />
-        }
-        <Folder className="w-3 h-3 shrink-0" />
-        <span className="truncate">{group.name}</span>
-      </button>
+    <div className="mb-2">
+      {/* Project name */}
+      <div className="flex items-center gap-2 px-4 pt-3 pb-1">
+        <Folder className="w-4 h-4 text-muted-foreground/60 shrink-0" />
+        <span className="text-[13px] font-medium text-foreground/80 truncate">{group.name}</span>
+      </div>
 
-      {/* Session items */}
-      {expanded && (
-        <div>
-          {visible.map((session) => {
-            const isActive = session.id === activeSessionId
-            return (
-              <button
-                key={session.id}
-                onClick={() => onResumeSession(session.id, session.workingDir)}
-                className={cn(
-                  'w-full text-left pl-6 pr-2 py-[6px] flex items-center gap-1 transition-colors rounded-sm',
-                  isActive
-                    ? 'bg-muted text-foreground'
-                    : 'text-foreground/70 hover:text-foreground hover:bg-muted/50'
-                )}
-              >
-                <span className="text-[12.5px] truncate flex-1 leading-tight">
-                  {session.firstMessage || 'Untitled'}
-                </span>
-                <span className="text-[10px] text-muted-foreground/60 shrink-0 tabular-nums">
-                  {timeAgo(session.timestamp)}
-                </span>
-              </button>
-            )
-          })}
-
-          {remaining > 0 && !showAll && (
+      {/* Sessions */}
+      <div>
+        {visible.map((session) => {
+          const isActive = session.id === activeSessionId
+          return (
             <button
-              onClick={(e) => { e.stopPropagation(); setShowAll(true) }}
-              className="w-full text-left pl-6 pr-2 py-[4px] text-[11px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+              key={session.id}
+              onClick={() => onResumeSession(session.id, session.workingDir)}
+              className={cn(
+                'w-full text-left px-4 py-[7px] flex items-center gap-2 transition-colors',
+                isActive
+                  ? 'bg-muted text-foreground'
+                  : 'text-foreground/70 hover:bg-muted/60 hover:text-foreground'
+              )}
             >
-              Show {remaining} more
+              <span className="text-[13px] truncate flex-1">
+                {session.firstMessage || 'Untitled'}
+              </span>
+              <span className="text-[12px] text-muted-foreground/50 shrink-0 tabular-nums">
+                {timeAgo(session.timestamp)}
+              </span>
             </button>
-          )}
-        </div>
-      )}
+          )
+        })}
+
+        {remaining > 0 && !showAll && (
+          <button
+            onClick={() => setShowAll(true)}
+            className="w-full text-left px-4 py-[5px] text-[12px] text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+          >
+            Show more
+          </button>
+        )}
+      </div>
     </div>
   )
 }
 
 export function Sidebar({
-  isOpen,
-  onToggle,
-  onNewSession,
-  onResumeSession,
-  activeSessionId,
+  isOpen, onToggle, onNewSession, onResumeSession, activeSessionId,
 }: SidebarProps) {
   const [sessions, setSessions] = useState<SessionInfo[]>([])
 
@@ -165,34 +140,51 @@ export function Sidebar({
     <div
       className={cn(
         'flex flex-col bg-title-bar border-r border-border overflow-hidden transition-all duration-200 shrink-0',
-        isOpen ? 'w-[220px]' : 'w-0'
+        isOpen ? 'w-[260px]' : 'w-0'
       )}
-      style={{ minWidth: isOpen ? 220 : 0 }}
+      style={{ minWidth: isOpen ? 260 : 0 }}
     >
       {isOpen && (
         <div className="flex flex-col h-full animate-fade-in">
-          {/* Header */}
-          <div className="flex items-center gap-1.5 px-2 pt-2 pb-1.5 shrink-0">
+          {/* Nav items */}
+          <div className="px-3 pt-3 pb-1 space-y-0.5 shrink-0">
             <button
               onClick={onNewSession}
-              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-[6px] rounded-md border border-border text-[12px] font-medium hover:bg-muted transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-[14px] text-foreground/80 hover:bg-muted hover:text-foreground transition-colors"
             >
-              <Plus className="w-3 h-3" />
+              <SquarePen className="w-[18px] h-[18px]" />
               New thread
             </button>
             <button
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-[14px] text-foreground/80 hover:bg-muted hover:text-foreground transition-colors"
+            >
+              <Clock className="w-[18px] h-[18px]" />
+              History
+            </button>
+            <button
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-[14px] text-foreground/80 hover:bg-muted hover:text-foreground transition-colors"
+            >
+              <Sparkles className="w-[18px] h-[18px]" />
+              Skills
+            </button>
+          </div>
+
+          {/* Threads label */}
+          <div className="flex items-center justify-between px-4 pt-4 pb-1">
+            <span className="text-[12px] font-medium text-muted-foreground/60">Threads</span>
+            <button
               onClick={onToggle}
               title="Collapse sidebar"
-              className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-muted transition-colors text-muted-foreground/60 hover:text-foreground shrink-0"
+              className="w-5 h-5 flex items-center justify-center rounded hover:bg-muted transition-colors text-muted-foreground/40 hover:text-foreground"
             >
               <PanelLeftClose className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          {/* Sessions */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden px-1.5 py-1 scrollbar-thin">
+          {/* Project groups with sessions */}
+          <div className="flex-1 overflow-y-auto overflow-x-hidden pb-2">
             {projects.length === 0 ? (
-              <p className="text-[11px] text-muted-foreground/50 px-2 py-4 text-center">
+              <p className="text-[12px] text-muted-foreground/40 px-4 py-6 text-center">
                 No sessions yet
               </p>
             ) : (
@@ -205,6 +197,14 @@ export function Sidebar({
                 />
               ))
             )}
+          </div>
+
+          {/* Footer */}
+          <div className="shrink-0 border-t border-border px-3 py-2">
+            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-[14px] text-foreground/60 hover:bg-muted hover:text-foreground transition-colors">
+              <Settings className="w-[18px] h-[18px]" />
+              Settings
+            </button>
           </div>
         </div>
       )}
