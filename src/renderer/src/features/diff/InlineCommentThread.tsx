@@ -13,7 +13,7 @@ export function InlineCommentThread({ comments, onResolve, onReply }: Props) {
   const [replyText, setReplyText] = useState('')
 
   return (
-    <div className="px-4 py-2 pl-14 border-t border-dashed border-border">
+    <div className="px-4 py-3 pl-14 border-t border-b border-border bg-amber-50 dark:bg-amber-950/30">
       {comments.map((comment) => (
         <div key={comment.id}>
           <CommentRow comment={comment} onResolve={onResolve} />
@@ -25,14 +25,14 @@ export function InlineCommentThread({ comments, onResolve, onReply }: Props) {
           <div className="mt-1 flex gap-2">
             <button
               onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-              className="text-[10px] text-muted-foreground hover:text-secondary transition-colors font-sans"
+              className="text-[10px] text-amber-600/70 hover:text-amber-700 dark:text-amber-500/70 dark:hover:text-amber-400 transition-colors font-sans"
             >
               Reply
             </button>
-            <span className="text-[10px] text-muted-foreground font-sans">·</span>
+            <span className="text-[10px] text-amber-600/40 dark:text-amber-500/40 font-sans">·</span>
             <button
               onClick={() => onResolve(comment.id)}
-              className="text-[10px] text-muted-foreground hover:text-secondary transition-colors font-sans"
+              className="text-[10px] text-amber-600/70 hover:text-amber-700 dark:text-amber-500/70 dark:hover:text-amber-400 transition-colors font-sans"
             >
               Resolve
             </button>
