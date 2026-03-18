@@ -10,7 +10,7 @@ export const mockDiffs: DiffFileData[] = [
     comments: [
       {
         id: 'c1',
-        lineNumber: 9,
+        lineNumber: 6,
         author: 'You',
         text: 'Should we keep both CTAs or just the primary?',
         timestamp: 'just now',
