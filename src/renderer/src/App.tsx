@@ -1,6 +1,11 @@
 import { useEffect } from 'react'
 import { useTheme } from './hooks/use-theme'
 import { TitleBar } from './features/title-bar/TitleBar'
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle
+} from './components/ui/resizable'
 
 export default function App() {
   const { theme, toggleTheme } = useTheme()
@@ -23,9 +28,19 @@ export default function App() {
         theme={theme}
         onToggleTheme={toggleTheme}
       />
-      <div className="flex-1 flex items-center justify-center text-muted-foreground">
-        Panels go here
-      </div>
+      <ResizablePanelGroup direction="horizontal" className="flex-1">
+        <ResizablePanel defaultSize={46} minSize={25}>
+          <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+            Chat Panel
+          </div>
+        </ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel defaultSize={54} minSize={30}>
+          <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
+            Diff Panel
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   )
 }
