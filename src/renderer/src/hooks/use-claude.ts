@@ -68,6 +68,8 @@ export function useClaude(): UseClaudeReturn {
     if (!window.claude) return
 
     const unsubMessage = window.claude.onMessage((event: CLIEvent) => {
+      console.log('[useClaude] event:', event.type, 'subtype' in event ? (event as any).subtype : '')
+
       switch (event.type) {
         case 'assistant': {
           // Full assistant message — extract text from content blocks
@@ -185,6 +187,17 @@ export function useClaude(): UseClaudeReturn {
           }))
 
           finalizeTurn()
+          break
+        }
+
+        case 'system':
+        case 'keep_alive':
+          // Ignore system/keepalive events
+          break
+
+        default: {
+          // Unknown event — log but don't break anything
+          console.log('[useClaude] unhandled event type:', (event as any).type)
           break
         }
       }

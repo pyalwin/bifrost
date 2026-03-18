@@ -105,6 +105,17 @@ export function AIMessage({ message, theme }: Props) {
           {message.isStreaming && <StreamingIndicator />}
         </div>
       )}
+
+      {/* Still streaming but no text arriving — show working indicator below content */}
+      {message.isStreaming && hasContent && tools.length === 0 && (
+        <div className="flex items-center gap-3 mt-2 animate-fade-in">
+          <div className="flex items-center gap-[5px]">
+            <span className="thinking-dot block w-[4px] h-[4px] rounded-full bg-muted-foreground/40" />
+            <span className="thinking-dot block w-[4px] h-[4px] rounded-full bg-muted-foreground/40" />
+            <span className="thinking-dot block w-[4px] h-[4px] rounded-full bg-muted-foreground/40" />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
