@@ -1,16 +1,43 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
-// Custom APIs for renderer
-const api = {}
+const claudeAPI = {
+  startSession: (workingDir: string) => ipcRenderer.invoke('claude:start-session', workingDir),
+  resumeSession: (sessionId: string, workingDir: string) =>
+    ipcRenderer.invoke('claude:resume-session', sessionId, workingDir),
+  listSessions: () => ipcRenderer.invoke('claude:list-sessions'),
+  cancelTurn: () => ipcRenderer.invoke('claude:cancel-turn'),
+  sendMessage: (text: string) => ipcRenderer.invoke('claude:send-message', text),
+  sendControlResponse: (requestId: string, approved: boolean) =>
+    ipcRenderer.invoke('claude:control-response', requestId, approved),
 
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
+  onMessage: (callback: (event: unknown) => void) => {
+    const handler = (_: unknown, event: unknown) => callback(event)
+    ipcRenderer.on('claude:message', handler)
+    return () => ipcRenderer.removeListener('claude:message', handler)
+  },
+  onConnectionStateChange: (callback: (state: string) => void) => {
+    const handler = (_: unknown, state: string) => callback(state)
+    ipcRenderer.on('claude:state-change', handler)
+    return () => ipcRenderer.removeListener('claude:state-change', handler)
+  },
+  onDiffUpdate: (callback: (diffs: unknown[]) => void) => {
+    const handler = (_: unknown, diffs: unknown[]) => callback(diffs)
+    ipcRenderer.on('claude:diff-update', handler)
+    return () => ipcRenderer.removeListener('claude:diff-update', handler)
+  },
+  onBranchChange: (callback: (branch: string) => void) => {
+    const handler = (_: unknown, branch: string) => callback(branch)
+    ipcRenderer.on('claude:branch-change', handler)
+    return () => ipcRenderer.removeListener('claude:branch-change', handler)
+  },
+  selectDirectory: () => ipcRenderer.invoke('claude:select-directory')
+}
+
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
-    contextBridge.exposeInMainWorld('api', api)
+    contextBridge.exposeInMainWorld('claude', claudeAPI)
   } catch (error) {
     console.error(error)
   }
@@ -18,5 +45,5 @@ if (process.contextIsolated) {
   // @ts-ignore (define in dts)
   window.electron = electronAPI
   // @ts-ignore (define in dts)
-  window.api = api
+  window.claude = claudeAPI
 }
