@@ -6,6 +6,7 @@ interface UseClaudeReturn {
   messages: Message[]
   diffs: DiffFileData[]
   branch: string
+  projectPath: string
   pendingApproval: { id: string; toolName: string; input: Record<string, unknown> } | null
   startSession: (workingDir: string) => Promise<void>
   resumeSession: (sessionId: string, workingDir: string) => Promise<void>
@@ -20,6 +21,7 @@ export function useClaude(): UseClaudeReturn {
   const [messages, setMessages] = useState<Message[]>([])
   const [diffs, setDiffs] = useState<DiffFileData[]>([])
   const [branch, setBranch] = useState('')
+  const [projectPath, setProjectPath] = useState('')
   const [pendingApproval, setPendingApproval] = useState<UseClaudeReturn['pendingApproval']>(null)
 
   const messageIdCounter = useRef(0)
@@ -221,6 +223,7 @@ export function useClaude(): UseClaudeReturn {
   const startSession = useCallback(async (workingDir: string) => {
     setMessages([])
     setDiffs([])
+    setProjectPath(workingDir)
     currentTurnId.current = null
     isInTurn.current = false
     try {
@@ -235,6 +238,7 @@ export function useClaude(): UseClaudeReturn {
   const resumeSession = useCallback(async (sessionId: string, workingDir: string) => {
     setMessages([])
     setDiffs([])
+    setProjectPath(workingDir)
     currentTurnId.current = null
     isInTurn.current = false
     try {
@@ -262,7 +266,7 @@ export function useClaude(): UseClaudeReturn {
   }, [])
 
   return {
-    connectionState, messages, diffs, branch, pendingApproval,
+    connectionState, messages, diffs, branch, projectPath, pendingApproval,
     startSession, resumeSession, sendMessage, cancelTurn, approveRequest, denyRequest,
   }
 }

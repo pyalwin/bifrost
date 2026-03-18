@@ -58,6 +58,7 @@ export default function App() {
       <div className="h-screen flex flex-col bg-background text-foreground">
         <TitleBar
           branch=""
+          projectPath=""
           theme={theme}
           onToggleTheme={toggleTheme}
           connectionState={claude.connectionState}
@@ -78,6 +79,7 @@ export default function App() {
     <div className="h-screen flex flex-col bg-background text-foreground">
       <TitleBar
         branch={claude.branch || 'main'}
+        projectPath={claude.projectPath}
         theme={theme}
         onToggleTheme={toggleTheme}
         connectionState={claude.connectionState}

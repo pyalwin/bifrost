@@ -1,9 +1,10 @@
-import { GitBranch, ExternalLink, GitCommit, Sun, Moon, Shield, ShieldOff } from 'lucide-react'
+import { GitBranch, ExternalLink, GitCommit, Sun, Moon, Shield, ShieldOff, Folder } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import type { ConnectionState } from '../../types'
 
 interface TitleBarProps {
   branch: string
+  projectPath: string
   theme: 'light' | 'dark'
   onToggleTheme: () => void
   openDisabled?: boolean
@@ -21,6 +22,7 @@ const stateColors: Record<ConnectionState, string> = {
 
 export function TitleBar({
   branch,
+  projectPath,
   theme,
   onToggleTheme,
   openDisabled = true,
@@ -28,6 +30,9 @@ export function TitleBar({
   manualApproval,
   onToggleApproval
 }: TitleBarProps) {
+  // Extract project name from path (last directory component)
+  const projectName = projectPath ? projectPath.split('/').filter(Boolean).pop() ?? '' : ''
+
   return (
     <div className="h-12 bg-title-bar border-b border-border flex items-center px-4 pl-20 select-none"
          style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
@@ -35,11 +40,31 @@ export function TitleBar({
         Claude Code
         <span className={cn('w-2 h-2 rounded-full', stateColors[connectionState])} />
       </span>
-      <span className="flex items-center gap-1.5 ml-3.5 text-muted-foreground text-[13px]"
-            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
-        <GitBranch className="w-[13px] h-[13px]" />
-        {branch}
-      </span>
+
+      {/* Project name + branch */}
+      {projectName && (
+        <span className="flex items-center gap-1.5 ml-3.5 text-muted-foreground text-[13px]"
+              style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+              title={projectPath}>
+          <Folder className="w-[13px] h-[13px]" />
+          <span>{projectName}</span>
+          {branch && (
+            <>
+              <span className="text-muted-foreground/40 mx-0.5">/</span>
+              <GitBranch className="w-[13px] h-[13px]" />
+              <span>{branch}</span>
+            </>
+          )}
+        </span>
+      )}
+
+      {!projectName && branch && (
+        <span className="flex items-center gap-1.5 ml-3.5 text-muted-foreground text-[13px]"
+              style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+          <GitBranch className="w-[13px] h-[13px]" />
+          {branch}
+        </span>
+      )}
       <div className="ml-auto flex items-center gap-2"
            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
         <button
