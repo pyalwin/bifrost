@@ -15,6 +15,10 @@ export interface Message {
   tools?: ToolUsage[]
   isStreaming?: boolean      // true while this message is still being streamed
   isThinking?: boolean       // true while Claude is thinking (before text starts)
+  question?: {               // AskUserQuestion — Claude is asking for user input
+    toolUseId: string
+    text: string
+  }
 }
 
 export interface DiffHunk {

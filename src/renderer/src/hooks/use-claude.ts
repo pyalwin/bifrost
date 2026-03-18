@@ -11,6 +11,7 @@ interface UseClaudeReturn {
   startSession: (workingDir: string) => Promise<void>
   resumeSession: (sessionId: string, workingDir: string) => Promise<void>
   sendMessage: (text: string) => void
+  answerQuestion: (toolUseId: string, answer: string) => void
   cancelTurn: () => void
   approveRequest: (id: string) => void
   denyRequest: (id: string) => void
@@ -89,9 +90,25 @@ export function useClaude(): UseClaudeReturn {
             startTurn()
           }
 
-          // Add tool_use items
-          if (toolUseBlocks.length > 0) {
-            const newTools: ToolUsage[] = toolUseBlocks.map(b => {
+          // Check for AskUserQuestion tool — this pauses the turn and waits for user input
+          const askQuestion = toolUseBlocks.find(b => b.name === 'AskUserQuestion')
+          if (askQuestion) {
+            const questionText = (askQuestion.input.question as string) ?? (askQuestion.input.text as string) ?? ''
+            if (questionText) {
+              updateCurrentMessage(m => ({
+                ...m,
+                question: { toolUseId: askQuestion.id, text: questionText },
+                isStreaming: false,
+                isThinking: false,
+              }))
+              break // Don't process other blocks — wait for user answer
+            }
+          }
+
+          // Add tool_use items (skip AskUserQuestion since it's handled above)
+          const regularTools = toolUseBlocks.filter(b => b.name !== 'AskUserQuestion')
+          if (regularTools.length > 0) {
+            const newTools: ToolUsage[] = regularTools.map(b => {
               let target = b.name
               if (b.input) {
                 if (typeof b.input.file_path === 'string') {
@@ -271,6 +288,27 @@ export function useClaude(): UseClaudeReturn {
     window.claude?.sendMessage(text)
   }, [finalizeTurn, startTurn])
 
+  const answerQuestion = useCallback((toolUseId: string, answer: string) => {
+    // Clear the question from the message
+    updateCurrentMessage(m => ({
+      ...m,
+      question: undefined,
+      isStreaming: true,
+      isThinking: true,
+    }))
+
+    // Add user's answer as a visible message
+    setMessages(prev => [...prev, {
+      id: `msg-${++messageIdCounter.current}`,
+      role: 'user',
+      content: answer,
+    }])
+
+    // Send as a user message — the CLI treats it as the tool_result response
+    // In WebSocket SDK mode, a regular user message continues the turn
+    window.claude?.sendMessage(answer)
+  }, [updateCurrentMessage])
+
   const startSession = useCallback(async (workingDir: string) => {
     setMessages([])
     setDiffs([])
@@ -318,6 +356,6 @@ export function useClaude(): UseClaudeReturn {
 
   return {
     connectionState, messages, diffs, branch, projectPath, pendingApproval,
-    startSession, resumeSession, sendMessage, cancelTurn, approveRequest, denyRequest,
+    startSession, resumeSession, sendMessage, answerQuestion, cancelTurn, approveRequest, denyRequest,
   }
 }

@@ -3,10 +3,12 @@ import type { Message } from '../../types'
 import { ToolUsageItem } from './ToolUsageItem'
 import { MarkdownRenderer } from './MarkdownRenderer'
 import { StreamingIndicator } from './StreamingIndicator'
+import { QuestionPrompt } from './QuestionPrompt'
 
 interface Props {
   message: Message
   theme: 'light' | 'dark'
+  onAnswerQuestion?: (toolUseId: string, answer: string) => void
 }
 
 // Two-word combo generator inspired by Claude Code CLI's quirky progress text.
@@ -68,10 +70,10 @@ function WorkingShimmer() {
   )
 }
 
-export function AIMessage({ message, theme }: Props) {
+export function AIMessage({ message, theme, onAnswerQuestion }: Props) {
   const tools = message.tools ?? []
   const hasContent = !!message.content
-  const isThinkingOnly = message.isThinking && !hasContent && tools.length === 0
+  const isThinkingOnly = message.isThinking && !hasContent && tools.length === 0 && !message.question
 
   return (
     <div className="mb-5 animate-fade-in-up">
@@ -107,7 +109,7 @@ export function AIMessage({ message, theme }: Props) {
       )}
 
       {/* Still streaming but no text arriving — show working indicator below content */}
-      {message.isStreaming && hasContent && tools.length === 0 && (
+      {message.isStreaming && hasContent && tools.length === 0 && !message.question && (
         <div className="flex items-center gap-3 mt-2 animate-fade-in">
           <div className="flex items-center gap-[5px]">
             <span className="thinking-dot block w-[4px] h-[4px] rounded-full bg-muted-foreground/40" />
@@ -115,6 +117,14 @@ export function AIMessage({ message, theme }: Props) {
             <span className="thinking-dot block w-[4px] h-[4px] rounded-full bg-muted-foreground/40" />
           </div>
         </div>
+      )}
+
+      {/* AskUserQuestion — Claude is asking for user input */}
+      {message.question && onAnswerQuestion && (
+        <QuestionPrompt
+          question={message.question.text}
+          onAnswer={(answer) => onAnswerQuestion(message.question!.toolUseId, answer)}
+        />
       )}
     </div>
   )

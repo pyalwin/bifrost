@@ -95,6 +95,7 @@ export default function App() {
             onApprove={(id) => claude.approveRequest(id)}
             onDeny={(id) => claude.denyRequest(id)}
             onSend={claude.sendMessage}
+            onAnswerQuestion={claude.answerQuestion}
             theme={theme}
             disabled={claude.connectionState !== 'active'}
           />

@@ -8,9 +8,10 @@ interface Props {
   messages: Message[]
   theme: 'light' | 'dark'
   onSend?: (text: string) => void
+  onAnswerQuestion?: (toolUseId: string, answer: string) => void
 }
 
-export function MessageList({ messages, theme, onSend }: Props) {
+export function MessageList({ messages, theme, onSend, onAnswerQuestion }: Props) {
   const { ref, onScroll } = useAutoScroll<HTMLDivElement>([messages.length])
 
   if (messages.length === 0) return <ChatEmptyState onSuggestionClick={onSend} />
@@ -21,7 +22,7 @@ export function MessageList({ messages, theme, onSend }: Props) {
         msg.role === 'user' ? (
           <UserMessage key={msg.id} content={msg.content} />
         ) : (
-          <AIMessage key={msg.id} message={msg} theme={theme} />
+          <AIMessage key={msg.id} message={msg} theme={theme} onAnswerQuestion={onAnswerQuestion} />
         )
       )}
     </div>

@@ -9,6 +9,7 @@ interface Props {
   onApprove: (id: string) => void
   onDeny: (id: string) => void
   onSend: (text: string) => void
+  onAnswerQuestion?: (toolUseId: string, answer: string) => void
   theme: 'light' | 'dark'
   disabled: boolean
 }
@@ -19,6 +20,7 @@ export function ChatPanel({
   onApprove,
   onDeny,
   onSend,
+  onAnswerQuestion,
   theme,
   disabled
 }: Props) {
@@ -32,7 +34,7 @@ export function ChatPanel({
           onDeny={() => onDeny(pendingApproval.id)}
         />
       )}
-      <MessageList messages={messages} theme={theme} onSend={onSend} />
+      <MessageList messages={messages} theme={theme} onSend={onSend} onAnswerQuestion={onAnswerQuestion} />
       <InputBox onSend={onSend} disabled={disabled} />
     </div>
   )
