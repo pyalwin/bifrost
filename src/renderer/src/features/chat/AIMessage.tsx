@@ -123,6 +123,8 @@ export function AIMessage({ message, theme, onAnswerQuestion }: Props) {
       {message.question && onAnswerQuestion && (
         <QuestionPrompt
           question={message.question.text}
+          header={message.question.header}
+          options={message.question.options}
           onAnswer={(answer) => onAnswerQuestion(message.question!.toolUseId, answer)}
         />
       )}

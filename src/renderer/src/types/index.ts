@@ -18,6 +18,8 @@ export interface Message {
   question?: {               // AskUserQuestion — Claude is asking for user input
     toolUseId: string
     text: string
+    header?: string
+    options?: Array<{ label: string; description?: string }>
   }
 }
 

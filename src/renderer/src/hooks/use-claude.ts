@@ -90,18 +90,32 @@ export function useClaude(): UseClaudeReturn {
             startTurn()
           }
 
-          // Check for AskUserQuestion tool — this pauses the turn and waits for user input
+          // Check for AskUserQuestion tool — pauses the turn and waits for user input
           const askQuestion = toolUseBlocks.find(b => b.name === 'AskUserQuestion')
           if (askQuestion) {
-            const questionText = (askQuestion.input.question as string) ?? (askQuestion.input.text as string) ?? ''
+            // Format: { questions: [{ question, header, options: [{ label, description }] }] }
+            const questions = askQuestion.input.questions as Array<{
+              question?: string; header?: string;
+              options?: Array<{ label: string; description?: string }>
+            }> | undefined
+            const firstQ = questions?.[0]
+            const questionText = firstQ?.question
+              ?? (askQuestion.input.question as string)
+              ?? (askQuestion.input.text as string)
+              ?? ''
             if (questionText) {
               updateCurrentMessage(m => ({
                 ...m,
-                question: { toolUseId: askQuestion.id, text: questionText },
+                question: {
+                  toolUseId: askQuestion.id,
+                  text: questionText,
+                  header: firstQ?.header,
+                  options: firstQ?.options,
+                },
                 isStreaming: false,
                 isThinking: false,
               }))
-              break // Don't process other blocks — wait for user answer
+              break
             }
           }
 
