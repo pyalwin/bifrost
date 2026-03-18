@@ -58,11 +58,11 @@ export default function App() {
     }
   }, [claude])
 
-  // Compute diff stats for title bar
-  const diffStats = claude.diffs.length > 0 ? {
+  // Compute diff stats for title bar — always show so user can toggle the pane
+  const diffStats = {
     additions: claude.diffs.reduce((sum, f) => sum + f.additions, 0),
     deletions: claude.diffs.reduce((sum, f) => sum + f.deletions, 0),
-  } : null
+  }
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground">

@@ -95,7 +95,7 @@ export function TitleBar({
         >
           {theme === 'light' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
-        {diffStats && diffStats.additions + diffStats.deletions > 0 && (
+        {diffStats && (
           <button
             onClick={onToggleDiff}
             className="flex items-center gap-1.5 px-3 py-1.5 border border-border rounded-lg text-[13px] font-medium bg-background hover:bg-muted transition-colors font-mono"
