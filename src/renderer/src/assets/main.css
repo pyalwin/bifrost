@@ -1,5 +1,35 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-title-bar: var(--title-bar-bg);
+  --color-user-bubble: var(--user-bubble);
+  --color-diff-added-bg: var(--diff-added-bg);
+  --color-diff-removed-bg: var(--diff-removed-bg);
+  --color-diff-added-text: var(--diff-added-text);
+  --color-diff-removed-text: var(--diff-removed-text);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-input: var(--input);
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  --font-mono: 'SF Mono', 'Monaco', 'Menlo', monospace;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #1a1a1a;
@@ -16,6 +46,9 @@
   --diff-removed-bg: #fff0f0;
   --diff-added-text: #1a7f37;
   --diff-removed-text: #c4473a;
+  --accent: #f4f4f5;
+  --accent-foreground: #1a1a1a;
+  --input: #e5e5e5;
   --radius: 0.5rem;
 }
 
@@ -35,6 +68,9 @@
   --diff-removed-bg: rgba(248, 113, 113, 0.1);
   --diff-added-text: #86efac;
   --diff-removed-text: #fca5a5;
+  --accent: #27272a;
+  --accent-foreground: #fafafa;
+  --input: #27272a;
 }
 
 body {
