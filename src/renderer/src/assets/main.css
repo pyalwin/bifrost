@@ -167,9 +167,5 @@ body {
 }
 [data-resize-handle]:hover,
 [data-resize-handle][data-resize-handle-active] {
-  background-color: var(--primary) !important;
-  opacity: 0.15;
-}
-[data-resize-handle][data-resize-handle-active] {
-  opacity: 0.25;
+  background-color: var(--border) !important;
 }

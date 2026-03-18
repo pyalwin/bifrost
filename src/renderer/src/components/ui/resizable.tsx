@@ -26,8 +26,8 @@ const ResizableHandle = ({
   <Separator
     className={cn(
       "relative flex w-px items-center justify-center bg-border transition-all duration-150",
-      "hover:w-[3px] hover:bg-foreground/10",
-      "data-[resize-handle-active]:w-[3px] data-[resize-handle-active]:bg-foreground/20",
+      "hover:w-[3px] hover:bg-border",
+      "data-[resize-handle-active]:w-[3px] data-[resize-handle-active]:bg-border",
       "after:absolute after:inset-y-0 after:left-1/2 after:w-3 after:-translate-x-1/2",
       className
     )}
