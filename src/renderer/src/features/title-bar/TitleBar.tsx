@@ -55,7 +55,7 @@ export function TitleBar({
       </button>
 
       <span className="font-semibold text-sm tracking-tight flex items-center gap-2">
-        Claude Code
+        Bifrost
         <span className={cn('w-2 h-2 rounded-full', stateColors[connectionState])} />
       </span>
 

@@ -206,7 +206,7 @@ export function StartScreen({
           <div className="w-11 h-11 rounded-xl bg-primary/[0.06] flex items-center justify-center mx-auto mb-4">
             <Terminal className="w-5.5 h-5.5 text-primary/40" />
           </div>
-          <h1 className="text-xl font-semibold tracking-tight mb-1">Claude Code</h1>
+          <h1 className="text-xl font-semibold tracking-tight mb-1">Bifrost</h1>
           <p className="text-[13px] text-muted-foreground">Choose a project to get started</p>
         </div>
       </div>
