@@ -67,6 +67,11 @@ export default function App() {
         />
         <StartScreen
           onNewSession={handleNewSession}
+          onStartSessionInDir={async (dir) => {
+            setSessionError(null)
+            try { await claude.startSession(dir) }
+            catch (err) { setSessionError(err instanceof Error ? err.message : String(err)) }
+          }}
           onResumeSession={handleResumeSession}
           isConnecting={claude.connectionState === 'connecting'}
           error={sessionError}

@@ -81,6 +81,59 @@ export function discoverSessions(workingDir: string): DiscoveredSession[] {
   return sessions
 }
 
+export interface DiscoveredProject {
+  name: string
+  workingDir: string
+  sessionCount: number
+  lastActive: number  // ms since epoch
+}
+
+/**
+ * Discover all known projects from ~/.claude/projects/.
+ * Returns projects sorted by most recently active.
+ */
+export function discoverProjects(): DiscoveredProject[] {
+  const claudeDir = join(homedir(), '.claude', 'projects')
+
+  let projectDirs: string[]
+  try {
+    projectDirs = readdirSync(claudeDir)
+  } catch {
+    return []
+  }
+
+  const projects: DiscoveredProject[] = []
+
+  for (const dir of projectDirs) {
+    const projectPath = join(claudeDir, dir)
+    let files: string[]
+    try {
+      files = readdirSync(projectPath).filter(f => f.endsWith('.jsonl'))
+    } catch {
+      continue
+    }
+    if (files.length === 0) continue
+
+    // Reverse: -Users-ottimate-Documents-code-datadash → /Users/ottimate/Documents/code/datadash
+    const workingDir = sep + dir.replace(/^-/, '').split('-').join(sep)
+    const name = workingDir.split(sep).filter(Boolean).pop() ?? dir
+
+    // Find most recent session file
+    let lastActive = 0
+    for (const file of files) {
+      try {
+        const stat = statSync(join(projectPath, file))
+        if (stat.mtimeMs > lastActive) lastActive = stat.mtimeMs
+      } catch { /* skip */ }
+    }
+
+    projects.push({ name, workingDir, sessionCount: files.length, lastActive })
+  }
+
+  projects.sort((a, b) => b.lastActive - a.lastActive)
+  return projects
+}
+
 /**
  * Discover sessions for all known projects (scans all project dirs).
  * Returns the 20 most recent sessions across all projects.

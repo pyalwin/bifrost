@@ -1,9 +1,20 @@
 import { useState, useEffect } from 'react'
-import { FolderOpen, History, Loader2, AlertCircle, ArrowLeft, MessageSquare, Folder } from 'lucide-react'
+import {
+  FolderOpen, Loader2, AlertCircle, ArrowLeft,
+  MessageSquare, Plus, Clock, ChevronRight, Terminal
+} from 'lucide-react'
 import type { SessionInfo } from '../../types'
+
+interface ProjectInfo {
+  name: string
+  workingDir: string
+  sessionCount: number
+  lastActive: number
+}
 
 interface Props {
   onNewSession: () => void
+  onStartSessionInDir: (workingDir: string) => void
   onResumeSession: (sessionId: string, workingDir: string) => void
   isConnecting?: boolean
   error?: string | null
@@ -17,152 +28,252 @@ function timeAgo(timestamp: number): string {
   const hours = Math.floor(minutes / 60)
   if (hours < 24) return `${hours}h ago`
   const days = Math.floor(hours / 24)
-  return `${days}d ago`
+  if (days < 7) return `${days}d ago`
+  return new Date(timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
-function projectName(workingDir: string): string {
-  return workingDir.split('/').filter(Boolean).pop() ?? workingDir
+function shortenPath(p: string): string {
+  return p.replace(/^\/Users\/[^/]+/, '~')
 }
 
-export function StartScreen({ onNewSession, onResumeSession, isConnecting, error }: Props) {
-  const [showSessions, setShowSessions] = useState(false)
+/* ─── Connecting overlay ─── */
+function ConnectingView() {
+  return (
+    <div className="h-full flex flex-col items-center justify-center gap-5 animate-fade-in">
+      <div className="relative">
+        <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
+          <Terminal className="w-7 h-7 text-foreground/30" />
+        </div>
+        <Loader2 className="absolute -bottom-1 -right-1 w-5 h-5 animate-spin text-primary" />
+      </div>
+      <div className="text-center">
+        <p className="text-sm font-medium text-foreground/60">Connecting to Claude</p>
+        <p className="text-xs text-muted-foreground mt-1">Starting CLI session...</p>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Error banner ─── */
+function ErrorBanner({ message }: { message: string }) {
+  return (
+    <div className="flex items-center gap-2.5 text-diff-removed-text text-[13px] bg-diff-removed-bg px-4 py-2.5 rounded-lg animate-fade-in-up">
+      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+      <span className="break-all">{message}</span>
+    </div>
+  )
+}
+
+/* ─── Step 2: Session picker for a chosen project ─── */
+function SessionPicker({
+  project,
+  onBack,
+  onNewSession,
+  onResumeSession,
+  error,
+}: {
+  project: ProjectInfo
+  onBack: () => void
+  onNewSession: (workingDir: string) => void
+  onResumeSession: (sessionId: string, workingDir: string) => void
+  error?: string | null
+}) {
   const [sessions, setSessions] = useState<SessionInfo[]>([])
-  const [loadingSessions, setLoadingSessions] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (showSessions) {
-      setLoadingSessions(true)
-      window.claude
-        ?.listSessions()
-        .then((result) => setSessions((result as SessionInfo[]) || []))
-        .catch(() => setSessions([]))
-        .finally(() => setLoadingSessions(false))
-    }
-  }, [showSessions])
+    setLoading(true)
+    window.claude
+      ?.listSessionsForDir(project.workingDir)
+      .then((result) => setSessions((result as SessionInfo[]) || []))
+      .catch(() => setSessions([]))
+      .finally(() => setLoading(false))
+  }, [project.workingDir])
 
-  if (isConnecting) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center gap-4 animate-fade-in">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Connecting to Claude CLI...</p>
-      </div>
-    )
-  }
-
-  if (showSessions) {
-    // Group sessions by project
-    const grouped = new Map<string, SessionInfo[]>()
-    for (const s of sessions) {
-      const name = projectName(s.workingDir)
-      const list = grouped.get(name) ?? []
-      list.push(s)
-      grouped.set(name, list)
-    }
-
-    return (
-      <div className="h-full flex flex-col px-8 py-6 overflow-y-auto animate-fade-in">
-        <div className="max-w-2xl mx-auto w-full">
-          <div className="flex items-center gap-3 mb-6">
-            <button
-              onClick={() => setShowSessions(false)}
-              className="w-8 h-8 flex items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
+  return (
+    <div className="h-full flex flex-col animate-fade-in">
+      {/* Header */}
+      <div className="px-6 pt-6 pb-4 border-b border-border">
+        <div className="max-w-lg mx-auto">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors mb-4"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            All projects
+          </button>
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-lg font-semibold">Resume Session</h1>
-              <p className="text-xs text-muted-foreground">Pick a previous Claude session to continue</p>
+              <h1 className="text-lg font-semibold tracking-tight">{project.name}</h1>
+              <p className="text-xs text-muted-foreground mt-0.5 font-mono">{shortenPath(project.workingDir)}</p>
             </div>
+            <button
+              onClick={() => onNewSession(project.workingDir)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-primary text-primary-foreground rounded-lg text-[13px] font-medium hover:opacity-80 transition-opacity"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              New session
+            </button>
           </div>
+        </div>
+      </div>
 
-          {error && (
-            <div className="flex items-center gap-2 text-diff-removed-text text-sm bg-diff-removed-bg px-4 py-2 rounded-lg mb-4">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <span className="break-all">{error}</span>
-            </div>
-          )}
+      {/* Session list */}
+      <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="max-w-lg mx-auto">
+          {error && <div className="mb-4"><ErrorBanner message={error} /></div>}
 
-          {loadingSessions && (
+          {loading && (
             <div className="flex items-center justify-center py-16">
               <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             </div>
           )}
 
-          {!loadingSessions && sessions.length === 0 && (
-            <div className="text-center py-16 text-muted-foreground">
-              <History className="w-8 h-8 mx-auto mb-2 opacity-30" />
-              <p className="text-sm">No previous sessions found</p>
+          {!loading && sessions.length === 0 && (
+            <div className="text-center py-16 animate-fade-in">
+              <MessageSquare className="w-8 h-8 mx-auto mb-3 text-muted-foreground/20" />
+              <p className="text-sm text-muted-foreground">No sessions yet in this project</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">Start a new session to begin</p>
             </div>
           )}
 
-          {!loadingSessions && [...grouped.entries()].map(([name, projectSessions]) => (
-            <div key={name} className="mb-6">
-              <div className="flex items-center gap-2 mb-2 text-[13px] text-muted-foreground">
-                <Folder className="w-3.5 h-3.5" />
-                <span className="font-medium">{name}</span>
-                <span className="text-muted-foreground/50 text-[11px] truncate">{projectSessions[0].workingDir}</span>
-              </div>
-              <div className="space-y-1">
-                {projectSessions.map((session) => (
-                  <button
-                    key={session.id}
-                    onClick={() => onResumeSession(session.id, session.workingDir)}
-                    className="w-full text-left px-4 py-3 border border-border rounded-lg hover:bg-muted transition-colors group"
-                  >
-                    <div className="flex items-start gap-3">
-                      <MessageSquare className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm text-foreground truncate">
-                          {session.firstMessage || 'New session'}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground">
-                          <span>{timeAgo(session.timestamp)}</span>
-                          <span className="text-muted-foreground/30">•</span>
-                          <span className="font-mono">{session.id.slice(0, 8)}</span>
-                        </div>
+          {!loading && sessions.length > 0 && (
+            <div className="space-y-1 stagger-children">
+              {sessions.slice(0, 15).map((session) => (
+                <button
+                  key={session.id}
+                  onClick={() => onResumeSession(session.id, session.workingDir)}
+                  className="w-full text-left px-4 py-3 rounded-lg hover:bg-muted transition-colors group"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-7 h-7 rounded-md bg-muted group-hover:bg-background flex items-center justify-center shrink-0 mt-0.5 transition-colors">
+                      <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] text-foreground truncate leading-snug">
+                        {session.firstMessage || 'Empty session'}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground">
+                        <Clock className="w-3 h-3" />
+                        <span>{timeAgo(session.timestamp)}</span>
+                        <span className="text-muted-foreground/30">·</span>
+                        <span className="font-mono">{session.id.slice(0, 8)}</span>
                       </div>
                     </div>
-                  </button>
-                ))}
-              </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors mt-1 shrink-0" />
+                  </div>
+                </button>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       </div>
+    </div>
+  )
+}
+
+/* ─── Step 1: Project picker (main view) ─── */
+export function StartScreen({
+  onNewSession,
+  onStartSessionInDir,
+  onResumeSession,
+  isConnecting,
+  error,
+}: Props) {
+  const [projects, setProjects] = useState<ProjectInfo[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedProject, setSelectedProject] = useState<ProjectInfo | null>(null)
+
+  useEffect(() => {
+    setLoading(true)
+    window.claude
+      ?.listProjects()
+      .then((result) => setProjects((result as ProjectInfo[]) || []))
+      .catch(() => setProjects([]))
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (isConnecting) return <ConnectingView />
+  if (selectedProject) {
+    return (
+      <SessionPicker
+        project={selectedProject}
+        onBack={() => setSelectedProject(null)}
+        onNewSession={onStartSessionInDir}
+        onResumeSession={onResumeSession}
+        error={error}
+      />
     )
   }
 
   return (
-    <div className="h-full flex flex-col items-center justify-center gap-6 animate-fade-in">
-      <div className="text-center mb-4">
-        <h1 className="text-2xl font-bold mb-2">Claude Code</h1>
-        <p className="text-muted-foreground text-sm">
-          Start a new session or resume where you left off
-        </p>
+    <div className="h-full flex flex-col animate-fade-in">
+      {/* Header */}
+      <div className="px-6 pt-8 pb-4">
+        <div className="max-w-lg mx-auto text-center">
+          <div className="w-11 h-11 rounded-xl bg-primary/[0.06] flex items-center justify-center mx-auto mb-4">
+            <Terminal className="w-5.5 h-5.5 text-primary/40" />
+          </div>
+          <h1 className="text-xl font-semibold tracking-tight mb-1">Claude Code</h1>
+          <p className="text-[13px] text-muted-foreground">Choose a project to get started</p>
+        </div>
       </div>
 
-      {error && (
-        <div className="flex items-center gap-2 text-diff-removed-text text-sm bg-diff-removed-bg px-4 py-2 rounded-lg max-w-md">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          <span className="break-all">{error}</span>
-        </div>
-      )}
+      {/* Project list */}
+      <div className="flex-1 overflow-y-auto px-6 py-2">
+        <div className="max-w-lg mx-auto">
+          {error && <div className="mb-4"><ErrorBanner message={error} /></div>}
 
-      <div className="flex gap-4">
-        <button
-          onClick={onNewSession}
-          className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-80 transition-opacity"
-        >
-          <FolderOpen className="w-4 h-4" />
-          New Session
-        </button>
-        <button
-          onClick={() => setShowSessions(true)}
-          className="flex items-center gap-2 px-6 py-3 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-colors"
-        >
-          <History className="w-4 h-4" />
-          Resume Session
-        </button>
+          {loading && (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+            </div>
+          )}
+
+          {!loading && (
+            <div className="space-y-1 stagger-children">
+              {projects.map((project) => (
+                <button
+                  key={project.workingDir}
+                  onClick={() => setSelectedProject(project)}
+                  className="w-full text-left px-4 py-3.5 rounded-lg hover:bg-muted transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-muted group-hover:bg-background flex items-center justify-center shrink-0 transition-colors">
+                      <FolderOpen className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[13px] font-medium text-foreground">{project.name}</div>
+                      <div className="text-[11px] text-muted-foreground font-mono truncate mt-0.5">
+                        {shortenPath(project.workingDir)}
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-[11px] text-muted-foreground">{timeAgo(project.lastActive)}</div>
+                      <div className="text-[10px] text-muted-foreground/50 mt-0.5">
+                        {project.sessionCount} session{project.sessionCount !== 1 ? 's' : ''}
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors shrink-0" />
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Footer — open different directory */}
+      <div className="px-6 py-4 border-t border-border">
+        <div className="max-w-lg mx-auto">
+          <button
+            onClick={onNewSession}
+            className="w-full flex items-center justify-center gap-2 py-2.5 text-[13px] text-muted-foreground hover:text-foreground border border-dashed border-border rounded-lg hover:bg-muted/50 transition-colors"
+          >
+            <FolderOpen className="w-4 h-4" />
+            Open a different directory...
+          </button>
+        </div>
       </div>
     </div>
   )
