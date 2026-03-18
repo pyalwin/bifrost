@@ -23,13 +23,10 @@ export class GitWatcher extends EventEmitter {
       return
     }
 
-    this.watcher = watch([join(gitDir, 'index'), this.workingDir], {
-      ignored: [
-        /(^|[/\\])\../,
-        '**/node_modules/**',
-        join(gitDir, 'objects/**'),
-        join(gitDir, 'logs/**')
-      ],
+    // Only watch .git/index (staging changes) and .git/HEAD (branch switches)
+    // NOT the entire working directory — that causes EMFILE on large repos
+    // File-level changes are caught via forceRefresh() after tool_use_summary events
+    this.watcher = watch([join(gitDir, 'index'), join(gitDir, 'HEAD')], {
       ignoreInitial: true,
       awaitWriteFinish: { stabilityThreshold: 200 }
     })
