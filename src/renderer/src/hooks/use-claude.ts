@@ -72,25 +72,57 @@ export function useClaude(): UseClaudeReturn {
 
       switch (event.type) {
         case 'assistant': {
-          // Full assistant message — extract text from content blocks
+          // Extract text blocks
           const textBlocks = event.message.content
             .filter((b): b is { type: 'text'; text: string } => b.type === 'text')
             .map(b => b.text)
             .join('')
 
-          if (!textBlocks) break
+          // Extract tool_use blocks (this is how tools appear in live WebSocket mode)
+          const toolUseBlocks = event.message.content
+            .filter((b): b is { type: 'tool_use'; id: string; name: string; input: Record<string, unknown> } => b.type === 'tool_use')
+
+          // Nothing useful in this event
+          if (!textBlocks && toolUseBlocks.length === 0) break
 
           if (!isInTurn.current) {
-            // No active turn — start one and set content
             startTurn()
           }
 
-          // Update the current message with the accumulated text
-          updateCurrentMessage(m => ({
-            ...m,
-            content: m.content ? m.content + '\n\n' + textBlocks : textBlocks,
-            isThinking: false,
-          }))
+          // Add tool_use items
+          if (toolUseBlocks.length > 0) {
+            const newTools: ToolUsage[] = toolUseBlocks.map(b => {
+              let target = b.name
+              if (b.input) {
+                if (typeof b.input.file_path === 'string') {
+                  target = String(b.input.file_path).split('/').pop() ?? b.name
+                } else if (typeof b.input.command === 'string') {
+                  const cmd = b.input.command as string
+                  target = cmd.length > 40 ? cmd.slice(0, 40) + '...' : cmd
+                } else if (typeof b.input.pattern === 'string') {
+                  target = b.input.pattern as string
+                }
+              }
+              return { action: b.name, target, status: 'pending' as const }
+            })
+
+            updateCurrentMessage(m => ({
+              ...m,
+              tools: [...(m.tools ?? []), ...newTools],
+              isThinking: false,
+            }))
+          }
+
+          // Add text content
+          if (textBlocks) {
+            // Mark any pending tools as success (text after tools means they completed)
+            updateCurrentMessage(m => ({
+              ...m,
+              content: m.content ? m.content + '\n\n' + textBlocks : textBlocks,
+              tools: m.tools?.map(t => t.status === 'pending' ? { ...t, status: 'success' as const } : t),
+              isThinking: false,
+            }))
+          }
           break
         }
 
@@ -180,10 +212,10 @@ export function useClaude(): UseClaudeReturn {
             }))
           }
 
-          // Remove any pending tools (replace with final state)
+          // Mark any remaining pending tools as success
           updateCurrentMessage(m => ({
             ...m,
-            tools: m.tools?.filter(t => t.status !== 'pending'),
+            tools: m.tools?.map(t => t.status === 'pending' ? { ...t, status: 'success' as const } : t),
           }))
 
           finalizeTurn()
