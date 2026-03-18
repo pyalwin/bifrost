@@ -6,7 +6,7 @@ interface Props {
   onResolve: (id: string) => void
 }
 
-export function CommentRow({ comment, onResolve }: Props) {
+export function CommentRow({ comment, onResolve: _onResolve }: Props) {
   return (
     <div className={cn('flex items-baseline gap-1.5 font-sans', comment.resolved && 'opacity-50')}>
       <span className="text-[11px] font-semibold">{comment.author}</span>

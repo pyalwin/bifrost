@@ -3,9 +3,9 @@ import { DiffSummaryHeader } from './DiffSummaryHeader'
 import { DiffFile } from './DiffFile'
 import { DiffEmptyState } from './EmptyState'
 
-interface Props { files: DiffFileData[] }
+interface Props { files: DiffFileData[]; theme: 'light' | 'dark' }
 
-export function DiffPanel({ files }: Props) {
+export function DiffPanel({ files, theme }: Props) {
   if (files.length === 0) return <DiffEmptyState />
 
   const totalAdditions = files.reduce((sum, f) => sum + f.additions, 0)
@@ -22,7 +22,7 @@ export function DiffPanel({ files }: Props) {
       />
       <div className="flex-1 overflow-y-auto">
         {files.map((file) => (
-          <DiffFile key={file.filename} file={file} />
+          <DiffFile key={file.filename} file={file} theme={theme} />
         ))}
       </div>
     </div>

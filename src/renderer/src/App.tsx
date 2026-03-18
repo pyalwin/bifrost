@@ -32,13 +32,13 @@ export default function App() {
         theme={theme}
         onToggleTheme={toggleTheme}
       />
-      <ResizablePanelGroup direction="horizontal" className="flex-1">
+      <ResizablePanelGroup orientation="horizontal" className="flex-1">
         <ResizablePanel defaultSize={46} minSize={25}>
           <ChatPanel messages={mockConversation.messages} />
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={54} minSize={30}>
-          <DiffPanel files={mockDiffs} />
+          <DiffPanel files={mockDiffs} theme={theme} />
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

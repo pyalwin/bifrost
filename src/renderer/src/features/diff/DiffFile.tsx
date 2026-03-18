@@ -3,9 +3,9 @@ import type { DiffFileData, InlineComment } from '../../types'
 import { DiffFileHeader } from './DiffFileHeader'
 import { DiffHunkView } from './DiffHunkView'
 
-interface Props { file: DiffFileData }
+interface Props { file: DiffFileData; theme: 'light' | 'dark' }
 
-export function DiffFile({ file }: Props) {
+export function DiffFile({ file, theme }: Props) {
   const [collapsed, setCollapsed] = useState(false)
   const [comments, setComments] = useState<InlineComment[]>(file.comments)
 
@@ -59,6 +59,8 @@ export function DiffFile({ file }: Props) {
       {!collapsed && (
         <DiffHunkView
           hunks={file.hunks}
+          language={file.language}
+          theme={theme}
           commentsByLine={commentsByLine}
           onResolve={handleResolve}
           onReply={handleReply}
