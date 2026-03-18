@@ -1,106 +1,143 @@
+<div align="center">
+
 # Bifrost
 
-> The bridge between worlds — a visual desktop UI for [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
+### The bridge between worlds
 
-Bifrost gives Claude Code a native desktop interface with a two-panel layout: an interactive chat on the left and a live git diff viewer on the right. Think of it as a visual wrapper around the Claude Code CLI — you get the full power of Claude's code editing, with a UI that shows you exactly what changed.
+A native desktop UI for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) — chat, edit, and review code changes in one window.
+
+[![MIT License](https://img.shields.io/badge/License-MIT-black.svg)](LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/pyalwin/bifrost?style=flat&color=black)](https://github.com/pyalwin/bifrost/stargazers)
+[![Built with Electron](https://img.shields.io/badge/Built_with-Electron-black.svg)](https://www.electronjs.org/)
+[![Powered by Claude](https://img.shields.io/badge/Powered_by-Claude_Code-black.svg)](https://docs.anthropic.com/en/docs/claude-code)
+
+[Getting Started](#getting-started) · [Features](#features) · [Architecture](#architecture) · [Contributing](#contributing)
+
+</div>
+
+---
+
+Claude Code is powerful, but it lives in the terminal. **Bifrost gives it a visual home** — a native desktop app where you can chat with Claude, watch it edit your code in real-time, review diffs, manage sessions, and switch between projects. All backed by the same Claude Code CLI you already use.
 
 ## Features
 
-- **Live CLI Integration** — Connects to Claude Code via WebSocket SDK mode for real-time streaming
-- **Chat Panel** — Markdown rendering, syntax-highlighted code blocks, Mermaid diagrams, tool progress indicators
-- **Diff Viewer** — Live git diff panel that auto-updates as Claude edits files, with syntax highlighting via Shiki
-- **Session Management** — Browse, resume, and continue previous Claude Code sessions from any project
-- **Collapsible Sidebar** — Sessions grouped by project with search across your entire Claude history
-- **Tool Approval** — Auto-approve mode or manual approve/deny for each tool use
-- **Inline Code Review** — Comment threads on diff lines with reply and resolve
-- **Model Selector** — Switch between Opus, Sonnet, and Haiku mid-session
-- **Light/Dark Theme** — Toggle with Cmd+D, persisted across sessions
-- **AskUserQuestion UI** — Interactive prompts with multiple-choice options when Claude needs input
+| Feature | Description |
+|---------|-------------|
+| **Live Streaming** | Real-time WebSocket connection to Claude Code CLI with token-by-token streaming |
+| **Diff Viewer** | Collapsible git diff panel that auto-updates as Claude edits files, with Shiki syntax highlighting |
+| **Session History** | Browse and resume any previous Claude Code session — discovers sessions from `~/.claude/projects/` |
+| **Project Sidebar** | Sessions grouped by project with collapsible navigation |
+| **Tool Progress** | Live indicators for Read, Edit, Bash, and other tool executions |
+| **Tool Approval** | Auto-approve mode or manual approve/deny toggle for each tool use |
+| **Model Selector** | Switch between Opus, Sonnet, and Haiku — persisted across sessions |
+| **Rich Rendering** | Markdown, code blocks, Mermaid diagrams, tables, and inline code |
+| **AskUserQuestion** | Interactive multiple-choice prompts when Claude needs input |
+| **Code Review** | Inline comment threads on diff lines with reply and resolve |
+| **Light/Dark Theme** | Toggle with `Cmd+D`, persisted to localStorage |
 
-## Screenshots
+## How It Works
 
-<!-- TODO: Add screenshots -->
+```
+┌─────────────────────────────────────────────────────────┐
+│ Electron Main Process                                    │
+│                                                          │
+│  ┌──────────────┐    WebSocket     ┌──────────────────┐ │
+│  │  WsBridge     │◄──── NDJSON ───►│  Claude CLI       │ │
+│  │  (ws server)  │                 │  --sdk-url        │ │
+│  └──────┬───────┘                 │  --resume <id>    │ │
+│         │                          └──────────────────┘ │
+│         │ IPC                                            │
+│  ┌──────┴───────┐                 ┌──────────────────┐ │
+│  │ SessionManager│                 │  GitWatcher       │ │
+│  │ (spawn/kill)  │                 │  (chokidar)       │ │
+│  └──────────────┘                 │  → git diff       │ │
+│                                    └────────┬─────────┘ │
+├──────────────── IPC ────────────────────────┼───────────┤
+│ Renderer (React)                             │           │
+│                                              │           │
+│  ┌─────┐ ┌────────────┐ ┌──────────────┐   │           │
+│  │Side │ │  ChatPanel  │ │  DiffPanel   │◄──┘           │
+│  │bar  │ │  streaming  │ │  live diffs  │               │
+│  └─────┘ └────────────┘ └──────────────┘               │
+└─────────────────────────────────────────────────────────┘
+```
 
-## Prerequisites
-
-- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) (v2.0+) installed and authenticated
-- [Node.js](https://nodejs.org/) 20+
-- macOS, Windows, or Linux
+1. **Bifrost starts a WebSocket server** in the Electron main process
+2. **Claude Code CLI connects** via `--sdk-url ws://localhost:PORT`
+3. **Messages flow bidirectionally** — user prompts go to CLI, streaming responses come back as NDJSON events
+4. **Tool approvals** are handled automatically or surfaced to the user
+5. **Git diffs** update in real-time via chokidar file watching
+6. **Sessions are discoverable** — scans `~/.claude/projects/` for JSONL history files
 
 ## Getting Started
 
+### Prerequisites
+
+- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) v2.0+ installed and authenticated
+- [Node.js](https://nodejs.org/) 20+
+- macOS, Windows, or Linux
+
+### Install & Run
+
 ```bash
-# Clone the repo
 git clone https://github.com/pyalwin/bifrost.git
 cd bifrost
-
-# Install dependencies
 npm install
-
-# Run in development mode
 npm run dev
 ```
 
-The app will launch as a native Electron window. Click **New thread** in the sidebar, select a project directory, and start chatting.
+Click **New thread** in the sidebar, select a project directory, and start chatting.
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Runtime | Electron |
-| Framework | React 18 + TypeScript |
-| Build | electron-vite |
-| Styling | Tailwind CSS v4 |
-| Components | shadcn/ui (New York) |
-| Syntax Highlighting | Shiki |
-| Markdown | react-markdown + remark-gfm |
-| Diagrams | Mermaid |
-| Diff Parsing | parse-diff |
-| File Watching | chokidar |
-| CLI Communication | WebSocket (ws) |
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| Runtime | **Electron** | Native desktop app |
+| Framework | **React 18 + TypeScript** | UI components |
+| Build | **electron-vite** | Fast HMR development |
+| Styling | **Tailwind CSS v4** + **shadcn/ui** | Design system |
+| CLI Bridge | **ws** (WebSocket) | Real-time communication with Claude Code |
+| Diff Parsing | **parse-diff** | Git unified diff → structured data |
+| Syntax | **Shiki** | VS Code-grade highlighting |
+| Markdown | **react-markdown** + **remark-gfm** | Rich content rendering |
+| Diagrams | **Mermaid** | Flowcharts, sequence diagrams |
+| File Watch | **chokidar** | Live git change detection |
 
 ## Architecture
 
 ```
-Electron Main Process
-├── WsBridge          — WebSocket server for CLI communication
-├── SessionManager    — CLI process lifecycle, auto-reconnect
-├── GitWatcher        — File watching + live diff updates
-├── SessionDiscovery  — Scan ~/.claude/projects/ for session history
-└── SessionHistory    — Load conversation history from JSONL files
-
-Electron Renderer (React)
-├── Sidebar           — Project-grouped session list
-├── ChatPanel         — Messages, streaming, tool progress
-├── DiffPanel         — Collapsible git diff viewer
-├── InputBox          — Message input with model selector
-└── TitleBar          — Branch, connection status, diff toggle
+src/
+├── main/                    # Electron main process
+│   ├── ws-bridge.ts         # WebSocket server for CLI
+│   ├── session-manager.ts   # CLI process lifecycle
+│   ├── git-watcher.ts       # File watching + diff updates
+│   ├── diff-parser.ts       # Unified diff → DiffFileData[]
+│   ├── session-discovery.ts # Scan ~/.claude for sessions
+│   ├── session-history.ts   # Load JSONL conversation history
+│   └── cli-discovery.ts     # Find claude binary
+├── preload/                 # IPC bridge (contextBridge)
+└── renderer/                # React UI
+    ├── features/
+    │   ├── sidebar/         # Project-grouped session list
+    │   ├── chat/            # Messages, streaming, tools
+    │   ├── diff/            # Git diff viewer
+    │   ├── title-bar/       # Status, branch, controls
+    │   └── start-screen/    # Project picker
+    ├── hooks/
+    │   ├── use-claude.ts    # CLI state management
+    │   ├── use-theme.ts     # Light/dark toggle
+    │   └── use-auto-scroll.ts
+    └── types/               # Shared type definitions
 ```
 
 ## Development
 
 ```bash
-# Run development server with hot reload
-npm run dev
-
-# Type check
-npm run typecheck
-
-# Lint
-npm run lint
-
-# Build for production
-npm run build
+npm run dev          # Development with hot reload
+npm run typecheck    # Type check (node + web)
+npm run lint         # ESLint
+npm run build        # Production build
 ```
-
-## How It Works
-
-1. **Bifrost starts a WebSocket server** in the Electron main process
-2. **Claude Code CLI connects** via `--sdk-url ws://localhost:PORT`
-3. **Messages flow bidirectionally** — user prompts go to CLI, streaming responses come back as NDJSON events
-4. **Tool approvals** are handled automatically (or manually with the shield toggle)
-5. **Git diffs** are detected via chokidar file watching and parsed with parse-diff
-6. **Sessions are discovered** by scanning `~/.claude/projects/` for JSONL session files
 
 ## Contributing
 
@@ -114,10 +151,10 @@ Contributions are welcome! Please open an issue first to discuss what you'd like
 
 ## License
 
-MIT
+[MIT](LICENSE)
 
 ## Acknowledgments
 
-- Built on top of [Claude Code](https://docs.anthropic.com/en/docs/claude-code) by Anthropic
+- Powered by [Claude Code](https://docs.anthropic.com/en/docs/claude-code) by Anthropic
 - UI components from [shadcn/ui](https://ui.shadcn.com/)
 - Icons from [Lucide](https://lucide.dev/)
