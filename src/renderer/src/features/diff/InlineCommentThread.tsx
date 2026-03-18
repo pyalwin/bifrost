@@ -14,7 +14,7 @@ export function InlineCommentThread({ comments, onResolve, onReply }: Props) {
 
   return (
     <div className="px-4 py-2 pl-14">
-      <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 rounded-md px-3 py-2.5">
+      <div className="bg-muted border border-border rounded-md px-3 py-2.5">
         {comments.map((comment) => (
           <div key={comment.id}>
             <CommentRow comment={comment} onResolve={onResolve} />
@@ -26,7 +26,7 @@ export function InlineCommentThread({ comments, onResolve, onReply }: Props) {
             <div className="mt-1.5 flex gap-3 ml-6">
               <button
                 onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                className="text-[12px] text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors font-sans"
+                className="text-[12px] text-muted-foreground hover:text-foreground transition-colors font-sans"
               >
                 Reply
               </button>
@@ -50,7 +50,7 @@ export function InlineCommentThread({ comments, onResolve, onReply }: Props) {
                     }
                   }}
                   placeholder="Reply..."
-                  className="flex-1 text-[13px] px-2.5 py-1.5 border border-blue-200 dark:border-blue-800/40 rounded bg-background outline-none focus:border-blue-400"
+                  className="flex-1 text-[13px] px-2.5 py-1.5 border border-border rounded bg-background outline-none focus:border-foreground/30"
                 />
               </div>
             )}

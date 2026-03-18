@@ -9,7 +9,7 @@ interface Props {
 export function CommentRow({ comment, onResolve: _onResolve }: Props) {
   return (
     <div className={cn('flex items-center gap-2 font-sans', comment.resolved && 'opacity-50')}>
-      <div className="w-5 h-5 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center text-[10px] font-semibold text-blue-600 dark:text-blue-400 shrink-0">
+      <div className="w-5 h-5 bg-muted-foreground/20 rounded-full flex items-center justify-center text-[10px] font-semibold text-muted-foreground shrink-0">
         {comment.author[0]}
       </div>
       <span className="text-[13px] font-semibold text-foreground">{comment.author}</span>
