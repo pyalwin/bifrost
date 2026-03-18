@@ -50,9 +50,9 @@ export class SessionManager extends EventEmitter {
         this._expectingDisconnect = true
       }
       if (event.type === 'control_request' && !this.manualApproval) {
-        // Extract request_id and tool_input from the control_request
-        const req = (event as any).request ?? event
-        const requestId = req.request_id ?? req.id ?? ''
+        // request_id is at TOP LEVEL, tool details are nested in event.request
+        const requestId = (event as any).request_id ?? ''
+        const req = (event as any).request ?? {}
         const toolInput = req.input ?? req.tool_input ?? {}
 
         console.log('[SessionManager] Auto-approving tool:', req.tool_name ?? req.tool, 'request_id:', requestId)
