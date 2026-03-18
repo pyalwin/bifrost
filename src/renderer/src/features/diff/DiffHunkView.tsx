@@ -1,9 +1,13 @@
-import type { DiffHunk, DiffLine } from '../../types'
+import type { DiffHunk, DiffLine, InlineComment } from '../../types'
 import { cn } from '../../lib/utils'
+import { InlineCommentThread } from './InlineCommentThread'
 
 interface Props {
   hunks: DiffHunk[]
+  commentsByLine?: Map<number, InlineComment[]>
   onLineClick?: (lineNumber: number) => void
+  onResolve?: (id: string) => void
+  onReply?: (parentId: string, text: string) => void
 }
 
 function LineRow({ line, onGutterClick }: { line: DiffLine; onGutterClick?: () => void }) {
@@ -27,23 +31,33 @@ function LineRow({ line, onGutterClick }: { line: DiffLine; onGutterClick?: () =
   )
 }
 
-export function DiffHunkView({ hunks, onLineClick }: Props) {
+export function DiffHunkView({ hunks, commentsByLine, onLineClick, onResolve, onReply }: Props) {
   return (
     <div className="font-mono text-xs leading-[1.85]">
       {hunks.map((hunk, hi) => (
         <div key={hi}>
           {hi > 0 && <div className="h-3" />}
-          {hunk.lines.map((line, li) => (
-            <LineRow
-              key={`${hi}-${li}`}
-              line={line}
-              onGutterClick={
-                onLineClick && line.newLineNumber
-                  ? () => onLineClick(line.newLineNumber!)
-                  : undefined
-              }
-            />
-          ))}
+          {hunk.lines.map((line, li) => {
+            const lineNum = line.newLineNumber
+            const lineComments = lineNum ? commentsByLine?.get(lineNum) : undefined
+            return (
+              <div key={`${hi}-${li}`}>
+                <LineRow
+                  line={line}
+                  onGutterClick={
+                    onLineClick && lineNum ? () => onLineClick(lineNum) : undefined
+                  }
+                />
+                {lineComments && lineComments.length > 0 && onResolve && onReply && (
+                  <InlineCommentThread
+                    comments={lineComments}
+                    onResolve={onResolve}
+                    onReply={onReply}
+                  />
+                )}
+              </div>
+            )
+          })}
         </div>
       ))}
     </div>
