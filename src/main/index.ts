@@ -233,8 +233,13 @@ process.on('unhandledRejection', (reason) => {
   console.error('[Main] Unhandled rejection:', reason)
 })
 
+// Set dock name on macOS (works in dev mode too)
+if (process.platform === 'darwin') {
+  app.setName('Bifrost')
+}
+
 app.whenReady().then(async () => {
-  electronApp.setAppUserModelId('com.bifrost')
+  electronApp.setAppUserModelId('com.bifrost.app')
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
