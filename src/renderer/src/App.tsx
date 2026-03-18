@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useTheme } from './hooks/use-theme'
+import { TitleBar } from './features/title-bar/TitleBar'
 
 export default function App() {
   const { theme, toggleTheme } = useTheme()
@@ -17,14 +18,13 @@ export default function App() {
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground">
-      <div className="h-12 bg-title-bar border-b border-border flex items-center px-4 pl-20">
-        <span className="font-semibold text-sm">Claude Code</span>
-        <button onClick={toggleTheme} className="ml-auto text-sm">
-          {theme === 'light' ? '☀️' : '🌙'}
-        </button>
-      </div>
+      <TitleBar
+        branch="feature/codex-cta"
+        theme={theme}
+        onToggleTheme={toggleTheme}
+      />
       <div className="flex-1 flex items-center justify-center text-muted-foreground">
-        Theme: {theme}
+        Panels go here
       </div>
     </div>
   )
