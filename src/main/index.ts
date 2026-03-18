@@ -67,11 +67,11 @@ function setupGitWatcher(workingDir: string): void {
   gitWatcher = new GitWatcher(workingDir)
 
   gitWatcher.on('diff-update', (diffs) => {
-    mainWindow?.webContents.send('claude:diff-update', diffs)
+    safeSend('claude:diff-update', diffs)
   })
 
   gitWatcher.on('branch-change', (branch) => {
-    mainWindow?.webContents.send('claude:branch-change', branch)
+    safeSend('claude:branch-change', branch)
   })
 
   gitWatcher.start()
@@ -167,9 +167,15 @@ function registerIpcHandlers(): void {
   })
 }
 
+function safeSend(channel: string, ...args: unknown[]): void {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send(channel, ...args)
+  }
+}
+
 function forwardSessionEvents(): void {
   sessionManager.on('cli-event', (event: Record<string, unknown>) => {
-    mainWindow?.webContents.send('claude:message', event)
+    safeSend('claude:message', event)
 
     // If it's a tool_use summary for an edit tool, refresh git diffs
     if (
@@ -182,11 +188,11 @@ function forwardSessionEvents(): void {
   })
 
   sessionManager.on('state-change', (state: string) => {
-    mainWindow?.webContents.send('claude:state-change', state)
+    safeSend('claude:state-change', state)
   })
 
   sessionManager.on('cli-error', (error: string) => {
-    mainWindow?.webContents.send('claude:message', { type: 'error', error })
+    safeSend('claude:message', { type: 'error', error })
   })
 }
 
