@@ -1,4 +1,4 @@
-import { readdirSync, statSync, readFileSync } from 'fs'
+import { readdirSync, statSync, readFileSync, existsSync } from 'fs'
 import { join, sep } from 'path'
 import { homedir } from 'os'
 
@@ -16,6 +16,40 @@ export interface DiscoveredSession {
  */
 function pathToProjectDir(workingDir: string): string {
   return workingDir.split(sep).join('-')
+}
+
+/**
+ * Reverse a Claude project directory name back to a real filesystem path.
+ * Naive '-' → '/' replacement breaks paths like 'claude-code-ui'.
+ * Instead, we reconstruct by checking which paths actually exist on disk.
+ */
+function projectDirToPath(dir: string): string {
+  // Remove leading dash
+  const cleaned = dir.replace(/^-/, '')
+  const parts = cleaned.split('-')
+
+  // Greedily reconstruct the path by checking what exists
+  let path = sep
+  let i = 0
+  while (i < parts.length) {
+    // Try joining progressively more parts with '-' to find existing directories
+    let found = false
+    for (let j = parts.length; j > i; j--) {
+      const candidate = join(path, parts.slice(i, j).join('-'))
+      if (existsSync(candidate)) {
+        path = candidate
+        i = j
+        found = true
+        break
+      }
+    }
+    if (!found) {
+      // No existing path found — just join remaining with separator
+      path = join(path, parts.slice(i).join('-'))
+      break
+    }
+  }
+  return path
 }
 
 /**
@@ -163,8 +197,8 @@ export function discoverProjects(): DiscoveredProject[] {
     }
     if (files.length === 0) continue
 
-    // Reverse: -Users-ottimate-Documents-code-datadash → /Users/ottimate/Documents/code/datadash
-    const workingDir = sep + dir.replace(/^-/, '').split('-').join(sep)
+    // Reverse the project dir name to a real filesystem path
+    const workingDir = projectDirToPath(dir)
     const name = workingDir.split(sep).filter(Boolean).pop() ?? dir
 
     // Find most recent session file
@@ -200,8 +234,8 @@ export function discoverAllSessions(): DiscoveredSession[] {
   const allSessions: DiscoveredSession[] = []
 
   for (const dir of projectDirs) {
-    // Reverse the path conversion: -Users-ottimate-... → /Users/ottimate/...
-    const workingDir = dir.split('-').join(sep)
+    // Reverse the project dir name to a real filesystem path
+    const workingDir = projectDirToPath(dir)
 
     const projectPath = join(claudeDir, dir)
     let files: string[]
