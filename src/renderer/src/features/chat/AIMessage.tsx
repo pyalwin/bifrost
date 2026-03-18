@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import type { Message } from '../../types'
 import { ToolUsageItem } from './ToolUsageItem'
 import { MarkdownRenderer } from './MarkdownRenderer'
@@ -8,7 +9,39 @@ interface Props {
   theme: 'light' | 'dark'
 }
 
+const THINKING_PHRASES = [
+  'Thinking',
+  'Reasoning through this',
+  'Exploring the codebase',
+  'Analyzing the context',
+  'Working on it',
+  'Reading the code',
+  'Considering approaches',
+  'Mapping the structure',
+  'Piecing it together',
+  'Digging deeper',
+  'Tracing the logic',
+  'Examining patterns',
+  'Connecting the dots',
+  'Processing',
+]
+
 function ThinkingDots() {
+  const [phraseIndex, setPhraseIndex] = useState(
+    () => Math.floor(Math.random() * THINKING_PHRASES.length)
+  )
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPhraseIndex(prev => {
+        let next: number
+        do { next = Math.floor(Math.random() * THINKING_PHRASES.length) } while (next === prev)
+        return next
+      })
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [])
+
   return (
     <div className="flex items-center gap-3 py-2 animate-fade-in">
       <div className="flex items-center gap-[5px]">
@@ -16,7 +49,9 @@ function ThinkingDots() {
         <span className="thinking-dot block w-[5px] h-[5px] rounded-full bg-muted-foreground/60" />
         <span className="thinking-dot block w-[5px] h-[5px] rounded-full bg-muted-foreground/60" />
       </div>
-      <span className="text-[13px] text-muted-foreground">Thinking</span>
+      <span key={phraseIndex} className="text-[13px] text-muted-foreground animate-fade-in">
+        {THINKING_PHRASES[phraseIndex]}
+      </span>
     </div>
   )
 }
