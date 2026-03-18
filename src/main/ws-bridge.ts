@@ -60,10 +60,12 @@ export class WsBridge extends EventEmitter {
 
   sendToClient(data: Record<string, unknown>): void {
     if (!this.connection || this.connection.readyState !== WebSocket.OPEN) {
-      console.warn('[WsBridge] No active connection, dropping message')
+      console.warn('[WsBridge] No active connection, dropping message:', data.type)
       return
     }
-    this.connection.send(JSON.stringify(data) + '\n')
+    const payload = JSON.stringify(data)
+    console.log('[WsBridge] Sending to CLI:', data.type, payload.length > 200 ? payload.slice(0, 200) + '...' : payload)
+    this.connection.send(payload + '\n')
   }
 
   get isConnected(): boolean {

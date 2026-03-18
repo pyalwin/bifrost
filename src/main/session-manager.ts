@@ -50,9 +50,20 @@ export class SessionManager extends EventEmitter {
         this._expectingDisconnect = true
       }
       if (event.type === 'control_request' && !this.manualApproval) {
+        // Extract request_id and tool_input from the control_request
+        const req = (event as any).request ?? event
+        const requestId = req.request_id ?? req.id ?? ''
+        const toolInput = req.input ?? req.tool_input ?? {}
+
+        console.log('[SessionManager] Auto-approving tool:', req.tool_name ?? req.tool, 'request_id:', requestId)
+
         this.bridge.sendToClient({
           type: 'control_response',
-          response: { response: { behavior: 'allow', updatedInput: null } }
+          response: {
+            subtype: 'success',
+            request_id: requestId,
+            response: { behavior: 'allow', updatedInput: toolInput }
+          }
         })
         return
       }
@@ -107,16 +118,24 @@ export class SessionManager extends EventEmitter {
     })
   }
 
-  sendControlResponse(_requestId: string, approved: boolean): void {
+  sendControlResponse(requestId: string, approved: boolean, toolInput?: Record<string, unknown>): void {
     if (approved) {
       this.bridge.sendToClient({
         type: 'control_response',
-        response: { response: { behavior: 'allow', updatedInput: null } }
+        response: {
+          subtype: 'success',
+          request_id: requestId,
+          response: { behavior: 'allow', updatedInput: toolInput ?? {} }
+        }
       })
     } else {
       this.bridge.sendToClient({
         type: 'control_response',
-        response: { response: { behavior: 'deny' } }
+        response: {
+          subtype: 'success',
+          request_id: requestId,
+          response: { behavior: 'deny', message: 'Denied by user' }
+        }
       })
     }
   }
