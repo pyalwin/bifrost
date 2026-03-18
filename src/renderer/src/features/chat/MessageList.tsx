@@ -4,9 +4,12 @@ import { AIMessage } from './AIMessage'
 import { ChatEmptyState } from './EmptyState'
 import { useAutoScroll } from '../../hooks/use-auto-scroll'
 
-interface Props { messages: Message[] }
+interface Props {
+  messages: Message[]
+  theme: 'light' | 'dark'
+}
 
-export function MessageList({ messages }: Props) {
+export function MessageList({ messages, theme }: Props) {
   const { ref, onScroll } = useAutoScroll<HTMLDivElement>([messages.length])
 
   if (messages.length === 0) return <ChatEmptyState />
@@ -17,7 +20,7 @@ export function MessageList({ messages }: Props) {
         msg.role === 'user' ? (
           <UserMessage key={msg.id} content={msg.content} />
         ) : (
-          <AIMessage key={msg.id} message={msg} />
+          <AIMessage key={msg.id} message={msg} theme={theme} />
         )
       )}
     </div>

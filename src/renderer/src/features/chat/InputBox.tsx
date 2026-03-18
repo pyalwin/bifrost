@@ -3,9 +3,10 @@ import { Plus, ChevronDown, ArrowUp } from 'lucide-react'
 
 interface Props {
   onSend: (text: string) => void
+  disabled?: boolean
 }
 
-export function InputBox({ onSend }: Props) {
+export function InputBox({ onSend, disabled = false }: Props) {
   const [value, setValue] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -35,9 +36,10 @@ export function InputBox({ onSend }: Props) {
           value={value}
           onChange={(e) => { setValue(e.target.value); handleInput() }}
           onKeyDown={handleKeyDown}
-          placeholder="Ask Claude anything"
+          placeholder={disabled ? 'Connecting...' : 'Ask Claude anything'}
+          disabled={disabled}
           rows={1}
-          className="w-full px-4 pt-3.5 pb-2 text-sm bg-transparent resize-none outline-none placeholder:text-muted-foreground/60"
+          className="w-full px-4 pt-3.5 pb-2 text-sm bg-transparent resize-none outline-none placeholder:text-muted-foreground/60 disabled:opacity-50 disabled:cursor-not-allowed"
         />
         <div className="flex items-center px-3 pb-2.5">
           <button className="w-[30px] h-[30px] flex items-center justify-center text-muted-foreground hover:text-secondary transition-colors">
@@ -48,10 +50,11 @@ export function InputBox({ onSend }: Props) {
             <ChevronDown className="w-3 h-3 text-muted-foreground" />
           </button>
           <button
+            disabled={disabled}
             onClick={() => {
-              if (value.trim()) { onSend(value.trim()); setValue('') }
+              if (value.trim() && !disabled) { onSend(value.trim()); setValue('') }
             }}
-            className="ml-auto w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center hover:opacity-80 transition-opacity"
+            className="ml-auto w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ArrowUp className="w-4 h-4" />
           </button>

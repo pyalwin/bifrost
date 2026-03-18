@@ -1,10 +1,14 @@
 import type { Message } from '../../types'
 import { ThinkingIndicator } from './ThinkingIndicator'
 import { ToolUsageItem } from './ToolUsageItem'
+import { MarkdownRenderer } from './MarkdownRenderer'
 
-interface Props { message: Message }
+interface Props {
+  message: Message
+  theme: 'light' | 'dark'
+}
 
-export function AIMessage({ message }: Props) {
+export function AIMessage({ message, theme }: Props) {
   const summaryTool = message.tools?.find(t => t.action === 'Explored')
   const detailTools = message.tools?.filter(t => t.action !== 'Explored') ?? []
 
@@ -12,7 +16,7 @@ export function AIMessage({ message }: Props) {
     <div className="mb-5">
       {message.content && (
         <div className="text-sm leading-[1.65] text-foreground mb-3.5">
-          {message.content}
+          <MarkdownRenderer content={message.content} theme={theme} />
         </div>
       )}
       {message.thinkingTime && (
