@@ -2,11 +2,9 @@ import type { Message } from '../../types'
 import { MessageList } from './MessageList'
 import { InputBox } from './InputBox'
 import { ToolApprovalBanner } from './ToolApprovalBanner'
-import { StreamingIndicator } from './StreamingIndicator'
 
 interface Props {
   messages: Message[]
-  streamingText: string
   pendingApproval: { id: string; toolName: string; input: Record<string, unknown> } | null
   onApprove: (id: string) => void
   onDeny: (id: string) => void
@@ -17,7 +15,6 @@ interface Props {
 
 export function ChatPanel({
   messages,
-  streamingText,
   pendingApproval,
   onApprove,
   onDeny,
@@ -36,12 +33,6 @@ export function ChatPanel({
         />
       )}
       <MessageList messages={messages} theme={theme} />
-      {streamingText && (
-        <div className="px-6 pb-2 text-sm leading-[1.65] text-foreground">
-          {streamingText}
-          <StreamingIndicator />
-        </div>
-      )}
       <InputBox onSend={onSend} disabled={disabled} />
     </div>
   )

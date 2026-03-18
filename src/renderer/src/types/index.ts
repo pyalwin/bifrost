@@ -13,6 +13,8 @@ export interface Message {
   content: string
   thinkingTime?: number
   tools?: ToolUsage[]
+  isStreaming?: boolean      // true while this message is still being streamed
+  isThinking?: boolean       // true while Claude is thinking (before text starts)
 }
 
 export interface DiffHunk {

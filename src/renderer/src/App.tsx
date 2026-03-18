@@ -88,7 +88,6 @@ export default function App() {
         <ResizablePanel defaultSize={46} minSize={25}>
           <ChatPanel
             messages={claude.messages}
-            streamingText={claude.streamingText}
             pendingApproval={claude.pendingApproval}
             onApprove={(id) => claude.approveRequest(id)}
             onDeny={(id) => claude.denyRequest(id)}
