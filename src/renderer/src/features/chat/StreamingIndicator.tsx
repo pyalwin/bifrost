@@ -1,3 +1,5 @@
 export function StreamingIndicator() {
-  return <span className="inline-block w-[6px] h-[14px] bg-foreground/50 animate-pulse ml-0.5 -mb-[2px] rounded-[1px]" />
+  return (
+    <span className="inline-block w-[5px] h-[15px] bg-foreground/60 animate-cursor-blink ml-0.5 -mb-[2px] rounded-[1px]" />
+  )
 }

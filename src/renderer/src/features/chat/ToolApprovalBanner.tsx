@@ -14,7 +14,7 @@ export function ToolApprovalBanner({ toolName, input, onApprove, onDeny }: Props
     .join(', ')
 
   return (
-    <div className="mx-4 mb-2 px-4 py-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-md flex items-center gap-3 font-sans">
+    <div className="mx-4 mb-2 px-4 py-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-md flex items-center gap-3 font-sans animate-fade-in-up">
       <div className="flex-1 min-w-0">
         <div className="text-[13px] font-semibold text-foreground">{toolName}</div>
         <div className="text-[12px] text-muted-foreground truncate">{preview}</div>
