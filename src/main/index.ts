@@ -6,6 +6,7 @@ import { WsBridge } from './ws-bridge'
 import { SessionManager } from './session-manager'
 import { GitWatcher } from './git-watcher'
 import { discoverSessions, discoverAllSessions, discoverProjects } from './session-discovery'
+import { loadSessionHistory } from './session-history'
 
 const store = new Store()
 const bridge = new WsBridge()
@@ -112,6 +113,12 @@ function registerIpcHandlers(): void {
   ipcMain.handle(
     'claude:resume-session',
     async (_event, sessionId: string, workingDir: string) => {
+      // Load and send history BEFORE connecting so UI has context immediately
+      const history = loadSessionHistory(sessionId, workingDir)
+      if (history.length > 0) {
+        safeSend('claude:history', history)
+      }
+
       setupGitWatcher(workingDir)
       await sessionManager.resumeSession(sessionId, workingDir)
 

@@ -33,6 +33,11 @@ const claudeAPI = {
     ipcRenderer.on('claude:branch-change', handler)
     return () => ipcRenderer.removeListener('claude:branch-change', handler)
   },
+  onHistory: (callback: (messages: unknown[]) => void) => {
+    const handler = (_: unknown, messages: unknown[]) => callback(messages)
+    ipcRenderer.on('claude:history', handler)
+    return () => ipcRenderer.removeListener('claude:history', handler)
+  },
   selectDirectory: () => ipcRenderer.invoke('claude:select-directory')
 }
 

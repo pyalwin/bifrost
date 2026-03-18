@@ -214,7 +214,12 @@ export function useClaude(): UseClaudeReturn {
       setBranch(newBranch)
     })
 
-    return () => { unsubMessage(); unsubState(); unsubDiff(); unsubBranch() }
+    const unsubHistory = window.claude.onHistory?.((historyMessages) => {
+      console.log('[useClaude] Received history:', (historyMessages as Message[]).length, 'messages')
+      setMessages(historyMessages as Message[])
+    })
+
+    return () => { unsubMessage(); unsubState(); unsubDiff(); unsubBranch(); unsubHistory?.() }
   }, [startTurn, finalizeTurn, updateCurrentMessage])
 
   const sendMessage = useCallback((text: string) => {
