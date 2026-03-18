@@ -1,9 +1,20 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import Store from 'electron-store'
+import { WsBridge } from './ws-bridge'
+import { SessionManager } from './session-manager'
+import { GitWatcher } from './git-watcher'
 
 const store = new Store()
+const bridge = new WsBridge()
+const sessionManager = new SessionManager(bridge)
+
+let mainWindow: BrowserWindow | null = null
+let gitWatcher: GitWatcher | null = null
+
+// Edit-related tool names that should trigger a git refresh
+const EDIT_TOOLS = new Set(['Edit', 'Write', 'NotebookEdit', 'Bash'])
 
 function createWindow(): void {
   const bounds = store.get('windowBounds', { width: 1400, height: 900 }) as {
@@ -13,7 +24,7 @@ function createWindow(): void {
     y?: number
   }
 
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     ...bounds,
     minWidth: 1000,
     minHeight: 600,
@@ -27,11 +38,11 @@ function createWindow(): void {
   })
 
   mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
+    mainWindow!.show()
   })
 
   mainWindow.on('close', () => {
-    store.set('windowBounds', mainWindow.getBounds())
+    store.set('windowBounds', mainWindow!.getBounds())
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -47,15 +58,129 @@ function createWindow(): void {
   }
 }
 
-app.whenReady().then(() => {
+function setupGitWatcher(workingDir: string): void {
+  if (gitWatcher) {
+    gitWatcher.stop()
+    gitWatcher.removeAllListeners()
+  }
+
+  gitWatcher = new GitWatcher(workingDir)
+
+  gitWatcher.on('diff-update', (diffs) => {
+    mainWindow?.webContents.send('claude:diff-update', diffs)
+  })
+
+  gitWatcher.on('branch-change', (branch) => {
+    mainWindow?.webContents.send('claude:branch-change', branch)
+  })
+
+  gitWatcher.start()
+}
+
+function registerIpcHandlers(): void {
+  ipcMain.handle('claude:start-session', async (_event, workingDir: string) => {
+    setupGitWatcher(workingDir)
+    await sessionManager.startSession(workingDir)
+    store.set('lastSession', {
+      workingDir,
+      sessionId: sessionManager.sessionId,
+      timestamp: Date.now()
+    })
+  })
+
+  ipcMain.handle(
+    'claude:resume-session',
+    async (_event, sessionId: string, workingDir: string) => {
+      setupGitWatcher(workingDir)
+      await sessionManager.resumeSession(sessionId, workingDir)
+      store.set('lastSession', {
+        workingDir,
+        sessionId,
+        timestamp: Date.now()
+      })
+    }
+  )
+
+  ipcMain.handle('claude:send-message', async (_event, text: string) => {
+    sessionManager.sendMessage(text)
+  })
+
+  ipcMain.handle(
+    'claude:control-response',
+    async (_event, requestId: string, approved: boolean) => {
+      sessionManager.sendControlResponse(requestId, approved)
+    }
+  )
+
+  ipcMain.handle('claude:cancel-turn', async () => {
+    await sessionManager.cancelTurn()
+  })
+
+  ipcMain.handle('claude:list-sessions', async () => {
+    const sessions = store.get('sessions', []) as Array<{
+      id: string
+      workingDir: string
+      timestamp: number
+    }>
+    return sessions
+  })
+
+  ipcMain.handle('claude:select-directory', async () => {
+    if (!mainWindow) return null
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openDirectory']
+    })
+    if (result.canceled || result.filePaths.length === 0) return null
+    return result.filePaths[0]
+  })
+}
+
+function forwardSessionEvents(): void {
+  sessionManager.on('cli-event', (event: Record<string, unknown>) => {
+    mainWindow?.webContents.send('claude:message', event)
+
+    // If it's a tool_use summary for an edit tool, refresh git diffs
+    if (
+      event.type === 'tool_use_summary' &&
+      typeof event.tool === 'string' &&
+      EDIT_TOOLS.has(event.tool)
+    ) {
+      gitWatcher?.forceRefresh()
+    }
+  })
+
+  sessionManager.on('state-change', (state: string) => {
+    mainWindow?.webContents.send('claude:state-change', state)
+  })
+
+  sessionManager.on('cli-error', (error: string) => {
+    mainWindow?.webContents.send('claude:message', { type: 'error', error })
+  })
+}
+
+async function cleanup(): Promise<void> {
+  if (gitWatcher) {
+    gitWatcher.stop()
+    gitWatcher = null
+  }
+  await bridge.stop()
+  // SessionManager's cancelTurn kills the CLI process
+  await sessionManager.cancelTurn()
+}
+
+app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.electron')
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  ipcMain.on('ping', () => console.log('pong'))
+  // Start the WS bridge before creating the window
+  await bridge.start()
+  console.log(`[Main] WsBridge started on port ${bridge.port}`)
 
+  registerIpcHandlers()
+  forwardSessionEvents()
   createWindow()
 
   app.on('activate', () => {
@@ -67,4 +192,8 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
+})
+
+app.on('before-quit', () => {
+  cleanup().catch((err) => console.error('[Main] Cleanup error:', err))
 })
