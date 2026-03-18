@@ -159,8 +159,21 @@ export class SessionManager extends EventEmitter {
     })
 
     this.process.stderr?.on('data', (data: Buffer) => {
-      console.error('[SessionManager] CLI stderr:', data.toString())
+      try {
+        console.error('[SessionManager] CLI stderr:', data.toString())
+      } catch {
+        // Ignore EPIPE errors when logging
+      }
     })
+
+    this.process.on('error', (err) => {
+      console.error('[SessionManager] Process error:', err.message)
+    })
+
+    // Handle broken pipe on stdin/stdout/stderr
+    this.process.stdin?.on('error', () => {})
+    this.process.stdout?.on('error', () => {})
+    this.process.stderr?.on('error', () => {})
 
     await new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
@@ -198,9 +211,20 @@ export class SessionManager extends EventEmitter {
     }
   }
 
+  /** Kill process and clean up — for app quit, does NOT re-spawn */
+  async destroy(): Promise<void> {
+    this.removeAllListeners()
+    await this.killProcess()
+    this.setState('idle')
+  }
+
   private async killProcess(): Promise<void> {
     if (this.process) {
-      this.process.kill('SIGTERM')
+      try {
+        this.process.kill('SIGTERM')
+      } catch {
+        // Process may already be dead
+      }
       this.process = null
     }
   }

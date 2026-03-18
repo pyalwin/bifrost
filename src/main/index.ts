@@ -195,10 +195,18 @@ async function cleanup(): Promise<void> {
     gitWatcher.stop()
     gitWatcher = null
   }
+  await sessionManager.destroy()
   await bridge.stop()
-  // SessionManager's cancelTurn kills the CLI process
-  await sessionManager.cancelTurn()
 }
+
+// Prevent EPIPE and unhandled rejection crashes
+process.on('uncaughtException', (err) => {
+  if (err.message.includes('EPIPE') || err.message.includes('write after end')) return
+  console.error('[Main] Uncaught exception:', err)
+})
+process.on('unhandledRejection', (reason) => {
+  console.error('[Main] Unhandled rejection:', reason)
+})
 
 app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.electron')
