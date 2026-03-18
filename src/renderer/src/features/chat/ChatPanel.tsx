@@ -12,6 +12,8 @@ interface Props {
   onAnswerQuestion?: (toolUseId: string, answer: string) => void
   theme: 'light' | 'dark'
   disabled: boolean
+  model: string
+  onModelChange: (model: string) => void
 }
 
 export function ChatPanel({
@@ -22,7 +24,9 @@ export function ChatPanel({
   onSend,
   onAnswerQuestion,
   theme,
-  disabled
+  disabled,
+  model,
+  onModelChange,
 }: Props) {
   return (
     <div className="h-full flex flex-col">
@@ -35,7 +39,7 @@ export function ChatPanel({
         />
       )}
       <MessageList messages={messages} theme={theme} onSend={onSend} onAnswerQuestion={onAnswerQuestion} />
-      <InputBox onSend={onSend} disabled={disabled} />
+      <InputBox onSend={onSend} disabled={disabled} model={model} onModelChange={onModelChange} />
     </div>
   )
 }

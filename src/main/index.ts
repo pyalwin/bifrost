@@ -82,9 +82,9 @@ function setupGitWatcher(workingDir: string): void {
 }
 
 function registerIpcHandlers(): void {
-  ipcMain.handle('claude:start-session', async (_event, workingDir: string) => {
+  ipcMain.handle('claude:start-session', async (_event, workingDir: string, model?: string) => {
     setupGitWatcher(workingDir)
-    await sessionManager.startSession(workingDir)
+    await sessionManager.startSession(workingDir, model)
 
     const sessionId = sessionManager.sessionId
     const timestamp = Date.now()
@@ -112,7 +112,7 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle(
     'claude:resume-session',
-    async (_event, sessionId: string, workingDir: string) => {
+    async (_event, sessionId: string, workingDir: string, model?: string) => {
       // Load and send history BEFORE connecting so UI has context immediately
       const history = loadSessionHistory(sessionId, workingDir)
       if (history.length > 0) {
@@ -120,7 +120,7 @@ function registerIpcHandlers(): void {
       }
 
       setupGitWatcher(workingDir)
-      await sessionManager.resumeSession(sessionId, workingDir)
+      await sessionManager.resumeSession(sessionId, workingDir, model)
 
       const timestamp = Date.now()
       store.set('lastSession', { workingDir, sessionId, timestamp })

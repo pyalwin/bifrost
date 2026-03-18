@@ -2,9 +2,9 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 const claudeAPI = {
-  startSession: (workingDir: string) => ipcRenderer.invoke('claude:start-session', workingDir),
-  resumeSession: (sessionId: string, workingDir: string) =>
-    ipcRenderer.invoke('claude:resume-session', sessionId, workingDir),
+  startSession: (workingDir: string, model?: string) => ipcRenderer.invoke('claude:start-session', workingDir, model),
+  resumeSession: (sessionId: string, workingDir: string, model?: string) =>
+    ipcRenderer.invoke('claude:resume-session', sessionId, workingDir, model),
   listSessions: () => ipcRenderer.invoke('claude:list-sessions'),
   listSessionsForDir: (workingDir: string) => ipcRenderer.invoke('claude:list-sessions-for-dir', workingDir),
   listProjects: () => ipcRenderer.invoke('claude:list-projects'),

@@ -15,6 +15,7 @@ export class SessionManager extends EventEmitter {
   private reconnectAttempts = 0
   private maxReconnectAttempts = 3
   private _expectingDisconnect = false
+  private _model: string | undefined = undefined
   public manualApproval = false
 
   constructor(bridge: WsBridge) {
@@ -90,6 +91,7 @@ export class SessionManager extends EventEmitter {
     await this.killProcess()
     this._workingDir = workingDir
     this._sessionId = null
+    this._model = model
     this.setState('connecting')
     await this.spawnCLI(workingDir, model)
   }
@@ -98,6 +100,7 @@ export class SessionManager extends EventEmitter {
     await this.killProcess()
     this._workingDir = workingDir
     this._sessionId = sessionId
+    this._model = model
     this.setState('connecting')
     await this.spawnCLI(workingDir, model, sessionId)
   }
@@ -107,7 +110,7 @@ export class SessionManager extends EventEmitter {
     // If process is dead, re-spawn with --resume before sending.
     if (!this.process && this._sessionId && this._workingDir) {
       console.log('[SessionManager] Re-spawning CLI for next turn')
-      await this.spawnCLI(this._workingDir, undefined, this._sessionId)
+      await this.spawnCLI(this._workingDir, this._model, this._sessionId)
     }
 
     this.bridge.sendToClient({

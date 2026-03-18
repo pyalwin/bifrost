@@ -14,6 +14,7 @@ export default function App() {
   const [_sessionError, setSessionError] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [diffOpen, setDiffOpen] = useState(false)
+  const [model, setModel] = useState(() => localStorage.getItem('bifrost-model') ?? 'sonnet')
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -98,6 +99,8 @@ export default function App() {
             onAnswerQuestion={claude.answerQuestion}
             theme={theme}
             disabled={claude.connectionState !== 'active'}
+            model={model}
+            onModelChange={(m) => { setModel(m); localStorage.setItem('bifrost-model', m) }}
           />
         </div>
         {/* Diff — collapsible from right */}
