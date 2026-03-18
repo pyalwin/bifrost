@@ -6,6 +6,7 @@ import { DiffEmptyState } from './EmptyState'
 interface Props { files: DiffFileData[]; theme: 'light' | 'dark' }
 
 export function DiffPanel({ files, theme }: Props) {
+  console.log('[DiffPanel] Rendering with', files.length, 'files')
   if (files.length === 0) return <DiffEmptyState />
 
   const totalAdditions = files.reduce((sum, f) => sum + f.additions, 0)

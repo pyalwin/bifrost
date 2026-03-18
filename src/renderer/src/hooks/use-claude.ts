@@ -207,6 +207,7 @@ export function useClaude(): UseClaudeReturn {
       setConnectionState(state as ConnectionState)
     })
     const unsubDiff = window.claude.onDiffUpdate((newDiffs) => {
+      console.log('[useClaude] Received diffs:', (newDiffs as DiffFileData[]).length, 'files')
       setDiffs(newDiffs as DiffFileData[])
     })
     const unsubBranch = window.claude.onBranchChange((newBranch) => {

@@ -33,7 +33,9 @@ export class GitWatcher extends EventEmitter {
     })
 
     this.watcher.on('all', () => this.debouncedRefresh())
-    this.refresh()
+
+    // Delay initial refresh to ensure renderer IPC listeners are subscribed
+    setTimeout(() => this.refresh(), 1000)
   }
 
   forceRefresh(): void {

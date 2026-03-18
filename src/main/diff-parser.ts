@@ -1,3 +1,5 @@
+import parseDiff from 'parse-diff'
+
 interface DiffLine {
   type: 'added' | 'removed' | 'context'
   content: string
@@ -22,31 +24,12 @@ interface DiffFileData {
 }
 
 const LANG_MAP: Record<string, string> = {
-  ts: 'typescript',
-  tsx: 'tsx',
-  js: 'javascript',
-  jsx: 'javascript',
-  py: 'python',
-  rb: 'ruby',
-  go: 'go',
-  rs: 'rust',
-  java: 'java',
-  kt: 'kotlin',
-  cs: 'csharp',
-  cpp: 'cpp',
-  c: 'c',
-  html: 'html',
-  css: 'css',
-  scss: 'css',
-  json: 'json',
-  yaml: 'yaml',
-  yml: 'yaml',
-  md: 'markdown',
-  sh: 'bash',
-  bash: 'bash',
-  zsh: 'bash',
-  sql: 'sql',
-  xml: 'html'
+  ts: 'typescript', tsx: 'tsx', js: 'javascript', jsx: 'javascript',
+  py: 'python', rb: 'ruby', go: 'go', rs: 'rust',
+  java: 'java', kt: 'kotlin', cs: 'csharp', cpp: 'cpp', c: 'c',
+  html: 'html', css: 'css', scss: 'css', json: 'json',
+  yaml: 'yaml', yml: 'yaml', md: 'markdown', sh: 'bash',
+  bash: 'bash', zsh: 'bash', sql: 'sql', xml: 'html',
 }
 
 function detectLanguage(filename: string): string {
@@ -55,65 +38,48 @@ function detectLanguage(filename: string): string {
 }
 
 export function parseUnifiedDiff(diffOutput: string): DiffFileData[] {
-  const files: DiffFileData[] = []
-  const fileChunks = diffOutput.split(/^diff --git /m).filter(Boolean)
+  if (!diffOutput.trim()) return []
 
-  for (const chunk of fileChunks) {
-    const lines = chunk.split('\n')
-    const headerMatch = lines[0]?.match(/a\/(.+?) b\/(.+)/)
-    if (!headerMatch) continue
-    const filename = headerMatch[2]
+  const parsed = parseDiff(diffOutput)
 
-    const hunks: DiffHunk[] = []
-    let additions = 0
-    let deletions = 0
-    let currentHunk: DiffHunk | null = null
-    let oldLine = 0
-    let newLine = 0
+  return parsed.map((file) => {
+    const filename = file.to ?? file.from ?? 'unknown'
 
-    for (const line of lines) {
-      const hunkMatch = line.match(/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/)
-      if (hunkMatch) {
-        currentHunk = {
-          oldStart: parseInt(hunkMatch[1]),
-          newStart: parseInt(hunkMatch[2]),
-          lines: []
+    const hunks: DiffHunk[] = file.chunks.map((chunk) => ({
+      oldStart: chunk.oldStart,
+      newStart: chunk.newStart,
+      lines: chunk.changes.map((change) => {
+        if (change.type === 'add') {
+          return {
+            type: 'added' as const,
+            content: change.content.slice(1), // remove leading +
+            newLineNumber: change.ln,
+          }
+        } else if (change.type === 'del') {
+          return {
+            type: 'removed' as const,
+            content: change.content.slice(1), // remove leading -
+            oldLineNumber: change.ln,
+          }
+        } else {
+          return {
+            type: 'context' as const,
+            content: change.content.slice(1), // remove leading space
+            oldLineNumber: change.ln1,
+            newLineNumber: change.ln2,
+          }
         }
-        hunks.push(currentHunk)
-        oldLine = parseInt(hunkMatch[1])
-        newLine = parseInt(hunkMatch[2])
-        continue
-      }
-      if (!currentHunk) continue
-      if (line.startsWith('+')) {
-        currentHunk.lines.push({ type: 'added', content: line.slice(1), newLineNumber: newLine++ })
-        additions++
-      } else if (line.startsWith('-')) {
-        currentHunk.lines.push({
-          type: 'removed',
-          content: line.slice(1),
-          oldLineNumber: oldLine++
-        })
-        deletions++
-      } else if (line.startsWith(' ')) {
-        currentHunk.lines.push({
-          type: 'context',
-          content: line.slice(1),
-          oldLineNumber: oldLine++,
-          newLineNumber: newLine++
-        })
-      }
-    }
+      }),
+    }))
 
-    files.push({
+    return {
       filename,
       language: detectLanguage(filename),
-      additions,
-      deletions,
+      additions: file.additions,
+      deletions: file.deletions,
       hunks,
       comments: [],
-      accepted: null
-    })
-  }
-  return files
+      accepted: null,
+    }
+  })
 }
