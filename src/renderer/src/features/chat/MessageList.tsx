@@ -7,12 +7,13 @@ import { useAutoScroll } from '../../hooks/use-auto-scroll'
 interface Props {
   messages: Message[]
   theme: 'light' | 'dark'
+  onSend?: (text: string) => void
 }
 
-export function MessageList({ messages, theme }: Props) {
+export function MessageList({ messages, theme, onSend }: Props) {
   const { ref, onScroll } = useAutoScroll<HTMLDivElement>([messages.length])
 
-  if (messages.length === 0) return <ChatEmptyState />
+  if (messages.length === 0) return <ChatEmptyState onSuggestionClick={onSend} />
 
   return (
     <div ref={ref} onScroll={onScroll} className="flex-1 overflow-y-auto px-6 py-5">

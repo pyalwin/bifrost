@@ -32,7 +32,7 @@ export function ChatPanel({
           onDeny={() => onDeny(pendingApproval.id)}
         />
       )}
-      <MessageList messages={messages} theme={theme} />
+      <MessageList messages={messages} theme={theme} onSend={onSend} />
       <InputBox onSend={onSend} disabled={disabled} />
     </div>
   )
