@@ -2,20 +2,18 @@ import { useState, useEffect, useCallback } from 'react'
 import { useTheme } from './hooks/use-theme'
 import { useClaude } from './hooks/use-claude'
 import { TitleBar } from './features/title-bar/TitleBar'
-import { StartScreen } from './features/start-screen/StartScreen'
-import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle
-} from './components/ui/resizable'
+import { Sidebar } from './features/sidebar/Sidebar'
 import { ChatPanel } from './features/chat/ChatPanel'
 import { DiffPanel } from './features/diff/DiffPanel'
+import { cn } from './lib/utils'
 
 export default function App() {
   const { theme, toggleTheme } = useTheme()
   const claude = useClaude()
   const [manualApproval, setManualApproval] = useState(false)
-  const [sessionError, setSessionError] = useState<string | null>(null)
+  const [_sessionError, setSessionError] = useState<string | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [diffOpen, setDiffOpen] = useState(false)
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -27,6 +25,13 @@ export default function App() {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [toggleTheme])
+
+  // Auto-open diff panel when changes arrive
+  useEffect(() => {
+    if (claude.diffs.length > 0 && !diffOpen) {
+      setDiffOpen(true)
+    }
+  }, [claude.diffs.length])
 
   const handleNewSession = useCallback(async () => {
     setSessionError(null)
@@ -53,46 +58,37 @@ export default function App() {
     }
   }, [claude])
 
-  if (claude.connectionState === 'idle' || claude.connectionState === 'connecting') {
-    return (
-      <div className="h-screen flex flex-col bg-background text-foreground">
-        <TitleBar
-          branch=""
-          projectPath=""
-          theme={theme}
-          onToggleTheme={toggleTheme}
-          connectionState={claude.connectionState}
-          manualApproval={manualApproval}
-          onToggleApproval={() => setManualApproval(!manualApproval)}
-        />
-        <StartScreen
-          onNewSession={handleNewSession}
-          onStartSessionInDir={async (dir) => {
-            setSessionError(null)
-            try { await claude.startSession(dir) }
-            catch (err) { setSessionError(err instanceof Error ? err.message : String(err)) }
-          }}
-          onResumeSession={handleResumeSession}
-          isConnecting={claude.connectionState === 'connecting'}
-          error={sessionError}
-        />
-      </div>
-    )
-  }
+  // Compute diff stats for title bar
+  const diffStats = claude.diffs.length > 0 ? {
+    additions: claude.diffs.reduce((sum, f) => sum + f.additions, 0),
+    deletions: claude.diffs.reduce((sum, f) => sum + f.deletions, 0),
+  } : null
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground">
       <TitleBar
-        branch={claude.branch || 'main'}
+        branch={claude.branch || ''}
         projectPath={claude.projectPath}
         theme={theme}
         onToggleTheme={toggleTheme}
         connectionState={claude.connectionState}
         manualApproval={manualApproval}
         onToggleApproval={() => setManualApproval(!manualApproval)}
+        sidebarOpen={sidebarOpen}
+        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        diffStats={diffStats}
+        onToggleDiff={() => setDiffOpen(!diffOpen)}
       />
-      <ResizablePanelGroup orientation="horizontal" className="flex-1">
-        <ResizablePanel defaultSize={46} minSize={25}>
+      <div className="flex-1 flex overflow-hidden">
+        <Sidebar
+          isOpen={sidebarOpen}
+          onToggle={() => setSidebarOpen(!sidebarOpen)}
+          onNewSession={handleNewSession}
+          onResumeSession={handleResumeSession}
+          activeSessionId={null}
+        />
+        {/* Chat — takes remaining space */}
+        <div className="flex-1 min-w-0">
           <ChatPanel
             messages={claude.messages}
             pendingApproval={claude.pendingApproval}
@@ -102,12 +98,15 @@ export default function App() {
             theme={theme}
             disabled={claude.connectionState !== 'active'}
           />
-        </ResizablePanel>
-        <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={54} minSize={30}>
-          <DiffPanel files={claude.diffs} theme={theme} />
-        </ResizablePanel>
-      </ResizablePanelGroup>
+        </div>
+        {/* Diff — collapsible from right */}
+        <div className={cn(
+          "border-l border-border transition-all duration-300 overflow-hidden",
+          diffOpen ? "w-[45%]" : "w-0"
+        )}>
+          {diffOpen && <DiffPanel files={claude.diffs} theme={theme} />}
+        </div>
+      </div>
     </div>
   )
 }

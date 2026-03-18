@@ -1,4 +1,4 @@
-import { GitBranch, ExternalLink, GitCommit, Sun, Moon, Shield, ShieldOff, Folder } from 'lucide-react'
+import { GitBranch, ExternalLink, GitCommit, Sun, Moon, Shield, ShieldOff, Folder, PanelLeftOpen, PanelLeftClose } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import type { ConnectionState } from '../../types'
 
@@ -11,6 +11,10 @@ interface TitleBarProps {
   connectionState: ConnectionState
   manualApproval: boolean
   onToggleApproval: () => void
+  sidebarOpen: boolean
+  onToggleSidebar: () => void
+  diffStats?: { additions: number; deletions: number } | null
+  onToggleDiff?: () => void
 }
 
 const stateColors: Record<ConnectionState, string> = {
@@ -28,7 +32,11 @@ export function TitleBar({
   openDisabled = true,
   connectionState,
   manualApproval,
-  onToggleApproval
+  onToggleApproval,
+  sidebarOpen,
+  onToggleSidebar,
+  diffStats,
+  onToggleDiff
 }: TitleBarProps) {
   // Extract project name from path (last directory component)
   const projectName = projectPath ? projectPath.split('/').filter(Boolean).pop() ?? '' : ''
@@ -68,6 +76,13 @@ export function TitleBar({
       <div className="ml-auto flex items-center gap-2"
            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
         <button
+          onClick={onToggleSidebar}
+          title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+          className="w-8 h-8 flex items-center justify-center border border-border rounded-lg bg-background hover:bg-muted transition-colors"
+        >
+          {sidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
+        </button>
+        <button
           onClick={onToggleApproval}
           title={manualApproval ? 'Manual approval on' : 'Auto-approve on'}
           className="w-8 h-8 flex items-center justify-center border border-border rounded-lg bg-background hover:bg-muted transition-colors"
@@ -80,6 +95,15 @@ export function TitleBar({
         >
           {theme === 'light' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
+        {diffStats && diffStats.additions + diffStats.deletions > 0 && (
+          <button
+            onClick={onToggleDiff}
+            className="flex items-center gap-1.5 px-3 py-1.5 border border-border rounded-lg text-[13px] font-medium bg-background hover:bg-muted transition-colors font-mono"
+          >
+            <span className="text-diff-added-text">+{diffStats.additions}</span>
+            <span className="text-diff-removed-text">-{diffStats.deletions}</span>
+          </button>
+        )}
         <button
           disabled={openDisabled}
           className={cn(
