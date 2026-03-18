@@ -13,7 +13,7 @@ export function InlineCommentThread({ comments, onResolve, onReply }: Props) {
   const [replyText, setReplyText] = useState('')
 
   return (
-    <div className="px-4 py-1 pl-14">
+    <div className="px-4 py-1">
       <div className="bg-muted border border-border rounded-md overflow-hidden">
         {comments.map((comment) => {
           // Flatten: parent + replies all render at same level, separated by dividers
