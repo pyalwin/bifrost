@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Folder, PanelLeftClose, SquarePen, Settings } from 'lucide-react'
+import { Folder, PanelLeftClose, SquarePen } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import type { SessionInfo } from '../../types'
 
@@ -187,13 +187,6 @@ export function Sidebar({
             )}
           </div>
 
-          {/* Footer */}
-          <div className="shrink-0 border-t border-border px-3 py-2">
-            <button className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-[14px] text-foreground/60 hover:bg-muted hover:text-foreground transition-colors">
-              <Settings className="w-[18px] h-[18px]" />
-              Settings
-            </button>
-          </div>
         </div>
       )}
     </div>
