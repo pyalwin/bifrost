@@ -205,13 +205,18 @@ export function useClaude(): UseClaudeReturn {
     // Finalize any in-progress turn before starting a new user message
     if (isInTurn.current) finalizeTurn()
 
+    // Add user message
     setMessages(prev => [...prev, {
       id: `msg-${++messageIdCounter.current}`,
       role: 'user',
       content: text,
     }])
+
+    // Immediately start the assistant turn so thinking indicator shows instantly
+    startTurn()
+
     window.claude?.sendMessage(text)
-  }, [finalizeTurn])
+  }, [finalizeTurn, startTurn])
 
   const startSession = useCallback(async (workingDir: string) => {
     setMessages([])
