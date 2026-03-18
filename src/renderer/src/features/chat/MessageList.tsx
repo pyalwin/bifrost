@@ -18,7 +18,7 @@ export function MessageList({ messages, theme, onSend, onAnswerQuestion }: Props
 
   return (
     <div ref={ref} onScroll={onScroll} className="flex-1 overflow-y-auto px-6 py-5">
-      <div className="max-w-[60%] mx-auto">
+      <div className="max-w-[52%] mx-auto">
         {messages.map((msg) =>
           msg.role === 'user' ? (
             <UserMessage key={msg.id} content={msg.content} />
