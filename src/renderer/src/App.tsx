@@ -8,6 +8,8 @@ import {
 } from './components/ui/resizable'
 import { ChatPanel } from './features/chat/ChatPanel'
 import { mockConversation } from './mocks/conversations'
+import { DiffPanel } from './features/diff/DiffPanel'
+import { mockDiffs } from './mocks/diffs'
 
 export default function App() {
   const { theme, toggleTheme } = useTheme()
@@ -36,9 +38,7 @@ export default function App() {
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={54} minSize={30}>
-          <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
-            Diff Panel
-          </div>
+          <DiffPanel files={mockDiffs} />
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
