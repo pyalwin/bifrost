@@ -54,3 +54,63 @@ export interface Conversation {
   diffs: DiffFileData[]
   branch: string
 }
+
+// Connection state for session lifecycle
+export type ConnectionState = 'idle' | 'connecting' | 'active' | 'disconnected'
+
+export interface SessionInfo {
+  id: string
+  projectName: string
+  workingDir: string
+  branch: string
+  lastActive: string
+}
+
+export type ContentBlock =
+  | { type: 'text'; text: string }
+  | { type: 'thinking'; thinking: string }
+  | { type: 'tool_use'; id: string; name: string; input: Record<string, unknown> }
+
+export type CLIEvent =
+  | { type: 'system'; subtype: 'init'; session_id: string; tools: string[] }
+  | { type: 'system'; subtype: 'status'; message: string }
+  | { type: 'assistant'; message: { content: ContentBlock[] } }
+  | { type: 'stream_event'; subtype: 'content_block_delta'; delta: { text?: string } }
+  | { type: 'tool_progress'; tool_name: string; progress: string }
+  | {
+      type: 'tool_use_summary'
+      tool_name: string
+      input: Record<string, unknown>
+      output: string
+      is_error: boolean
+    }
+  | { type: 'control_request'; id: string; tool_name: string; input: Record<string, unknown> }
+  | {
+      type: 'result'
+      session_id: string
+      cost_usd: number
+      duration_ms: number
+      is_error: boolean
+      result: string
+    }
+  | { type: 'keep_alive' }
+
+export interface ClaudeAPI {
+  startSession(workingDir: string): Promise<void>
+  resumeSession(sessionId: string, workingDir: string): Promise<void>
+  listSessions(): Promise<SessionInfo[]>
+  cancelTurn(): Promise<void>
+  sendMessage(text: string): Promise<void>
+  sendControlResponse(requestId: string, approved: boolean): Promise<void>
+  onMessage(callback: (event: CLIEvent) => void): () => void
+  onConnectionStateChange(callback: (state: ConnectionState) => void): () => void
+  onDiffUpdate(callback: (diffs: DiffFileData[]) => void): () => void
+  onBranchChange(callback: (branch: string) => void): () => void
+  selectDirectory(): Promise<string | null>
+}
+
+declare global {
+  interface Window {
+    claude: ClaudeAPI
+  }
+}
