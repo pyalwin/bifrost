@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTheme } from './hooks/use-theme'
 import { useClaude } from './hooks/use-claude'
 import { TitleBar } from './features/title-bar/TitleBar'
@@ -9,14 +9,13 @@ import {
   ResizableHandle
 } from './components/ui/resizable'
 import { ChatPanel } from './features/chat/ChatPanel'
-import { mockConversation } from './mocks/conversations'
 import { DiffPanel } from './features/diff/DiffPanel'
-import { mockDiffs } from './mocks/diffs'
 
 export default function App() {
   const { theme, toggleTheme } = useTheme()
   const claude = useClaude()
   const [manualApproval, setManualApproval] = useState(false)
+  const [sessionError, setSessionError] = useState<string | null>(null)
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -29,12 +28,32 @@ export default function App() {
     return () => window.removeEventListener('keydown', handler)
   }, [toggleTheme])
 
-  const handleNewSession = async () => {
-    const dir = await window.claude?.selectDirectory()
-    if (dir) await claude.startSession(dir)
-  }
+  const handleNewSession = useCallback(async () => {
+    setSessionError(null)
+    try {
+      const dir = await window.claude?.selectDirectory()
+      if (dir) {
+        await claude.startSession(dir)
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.error('[App] Failed to start session:', message)
+      setSessionError(message)
+    }
+  }, [claude])
 
-  if (claude.connectionState === 'idle') {
+  const handleResumeSession = useCallback(async (sessionId: string, workingDir: string) => {
+    setSessionError(null)
+    try {
+      await claude.resumeSession(sessionId, workingDir)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.error('[App] Failed to resume session:', message)
+      setSessionError(message)
+    }
+  }, [claude])
+
+  if (claude.connectionState === 'idle' || claude.connectionState === 'connecting') {
     return (
       <div className="h-screen flex flex-col bg-background text-foreground">
         <TitleBar
@@ -47,13 +66,13 @@ export default function App() {
         />
         <StartScreen
           onNewSession={handleNewSession}
-          onResumeSession={() => console.log('Resume session — future work')}
+          onResumeSession={handleResumeSession}
+          isConnecting={claude.connectionState === 'connecting'}
+          error={sessionError}
         />
       </div>
     )
   }
-
-  const displayDiffs = claude.diffs.length > 0 ? claude.diffs : mockDiffs
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground">
@@ -68,7 +87,7 @@ export default function App() {
       <ResizablePanelGroup orientation="horizontal" className="flex-1">
         <ResizablePanel defaultSize={46} minSize={25}>
           <ChatPanel
-            messages={claude.messages.length > 0 ? claude.messages : mockConversation.messages}
+            messages={claude.messages}
             streamingText={claude.streamingText}
             pendingApproval={claude.pendingApproval}
             onApprove={(id) => claude.approveRequest(id)}
@@ -80,7 +99,7 @@ export default function App() {
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel defaultSize={54} minSize={30}>
-          <DiffPanel files={displayDiffs} theme={theme} />
+          <DiffPanel files={claude.diffs} theme={theme} />
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

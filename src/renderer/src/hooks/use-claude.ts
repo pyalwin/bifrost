@@ -127,11 +127,27 @@ export function useClaude(): UseClaudeReturn {
   const startSession = useCallback(async (workingDir: string) => {
     setMessages([])
     setDiffs([])
-    await window.claude?.startSession(workingDir)
+    setStreamingText('')
+    try {
+      await window.claude?.startSession(workingDir)
+    } catch (err) {
+      console.error('[useClaude] startSession failed:', err)
+      setConnectionState('idle')
+      throw err
+    }
   }, [])
 
   const resumeSession = useCallback(async (sessionId: string, workingDir: string) => {
-    await window.claude?.resumeSession(sessionId, workingDir)
+    setMessages([])
+    setDiffs([])
+    setStreamingText('')
+    try {
+      await window.claude?.resumeSession(sessionId, workingDir)
+    } catch (err) {
+      console.error('[useClaude] resumeSession failed:', err)
+      setConnectionState('idle')
+      throw err
+    }
   }, [])
 
   const cancelTurn = useCallback(() => {

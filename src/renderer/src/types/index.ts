@@ -60,10 +60,8 @@ export type ConnectionState = 'idle' | 'connecting' | 'active' | 'disconnected'
 
 export interface SessionInfo {
   id: string
-  projectName: string
   workingDir: string
-  branch: string
-  lastActive: string
+  timestamp: number
 }
 
 export type ContentBlock =

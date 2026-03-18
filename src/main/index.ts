@@ -81,11 +81,29 @@ function registerIpcHandlers(): void {
   ipcMain.handle('claude:start-session', async (_event, workingDir: string) => {
     setupGitWatcher(workingDir)
     await sessionManager.startSession(workingDir)
-    store.set('lastSession', {
-      workingDir,
-      sessionId: sessionManager.sessionId,
-      timestamp: Date.now()
-    })
+
+    const sessionId = sessionManager.sessionId
+    const timestamp = Date.now()
+    store.set('lastSession', { workingDir, sessionId, timestamp })
+
+    // Persist to the sessions list so Resume Session can find it
+    if (sessionId) {
+      const sessions = (store.get('sessions', []) as Array<{
+        id: string
+        workingDir: string
+        timestamp: number
+      }>)
+      // Update existing or push new
+      const idx = sessions.findIndex((s) => s.id === sessionId)
+      const entry = { id: sessionId, workingDir, timestamp }
+      if (idx >= 0) {
+        sessions[idx] = entry
+      } else {
+        sessions.unshift(entry)
+      }
+      // Keep only the 20 most recent
+      store.set('sessions', sessions.slice(0, 20))
+    }
   })
 
   ipcMain.handle(
@@ -93,11 +111,24 @@ function registerIpcHandlers(): void {
     async (_event, sessionId: string, workingDir: string) => {
       setupGitWatcher(workingDir)
       await sessionManager.resumeSession(sessionId, workingDir)
-      store.set('lastSession', {
-        workingDir,
-        sessionId,
-        timestamp: Date.now()
-      })
+
+      const timestamp = Date.now()
+      store.set('lastSession', { workingDir, sessionId, timestamp })
+
+      // Update timestamp in the sessions list
+      const sessions = (store.get('sessions', []) as Array<{
+        id: string
+        workingDir: string
+        timestamp: number
+      }>)
+      const idx = sessions.findIndex((s) => s.id === sessionId)
+      const entry = { id: sessionId, workingDir, timestamp }
+      if (idx >= 0) {
+        sessions[idx] = entry
+      } else {
+        sessions.unshift(entry)
+      }
+      store.set('sessions', sessions.slice(0, 20))
     }
   )
 
@@ -117,12 +148,13 @@ function registerIpcHandlers(): void {
   })
 
   ipcMain.handle('claude:list-sessions', async () => {
-    const sessions = store.get('sessions', []) as Array<{
+    const sessions = (store.get('sessions', []) as Array<{
       id: string
       workingDir: string
       timestamp: number
-    }>
-    return sessions
+    }>)
+    // Return sorted newest-first
+    return sessions.sort((a, b) => b.timestamp - a.timestamp)
   })
 
   ipcMain.handle('claude:select-directory', async () => {
