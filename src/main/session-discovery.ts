@@ -19,16 +19,47 @@ function pathToProjectDir(workingDir: string): string {
 }
 
 /**
- * Extract the first user message from a session JSONL file.
- * The first line is typically a queue-operation with the initial prompt.
+ * Extract the first real user message from a session JSONL file.
+ * Handles multiple formats:
+ *   - queue-operation: { type: "queue-operation", content: "..." }
+ *   - user message: { type: "user", message: { role: "user", content: "..." } }
+ * Skips isMeta messages and system/hook content.
  */
 function extractFirstMessage(jsonlPath: string): string {
   try {
-    const firstLine = readFileSync(jsonlPath, 'utf-8').split('\n')[0]
-    if (!firstLine) return ''
-    const data = JSON.parse(firstLine)
-    if (data.type === 'queue-operation' && data.content) {
-      return typeof data.content === 'string' ? data.content : ''
+    const raw = readFileSync(jsonlPath, 'utf-8')
+    const lines = raw.split('\n')
+
+    // Only scan first 200 lines to avoid reading huge files
+    const limit = Math.min(lines.length, 200)
+    for (let i = 0; i < limit; i++) {
+      const line = lines[i]?.trim()
+      if (!line) continue
+
+      let d: Record<string, unknown>
+      try { d = JSON.parse(line) } catch { continue }
+
+      // Format 1: queue-operation (from --print mode sessions)
+      if (d.type === 'queue-operation' && typeof d.content === 'string' && d.content) {
+        return d.content
+      }
+
+      // Format 2: user message (from interactive sessions)
+      if (d.type === 'user' && !d.isMeta) {
+        const msg = d.message as Record<string, unknown> | undefined
+        if (!msg) continue
+        const content = msg.content
+        if (typeof content === 'string' && content && !content.startsWith('<')) {
+          return content
+        }
+        if (Array.isArray(content)) {
+          const texts = content
+            .filter((b: unknown) => typeof b === 'object' && b !== null && (b as Record<string, unknown>).type === 'text')
+            .map((b: unknown) => ((b as Record<string, unknown>).text as string) ?? '')
+            .filter((t: string) => t && !t.startsWith('<'))
+          if (texts.length > 0) return texts[0]
+        }
+      }
     }
     return ''
   } catch {

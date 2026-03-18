@@ -139,28 +139,20 @@ function SessionPicker({
 
           {!loading && sessions.length > 0 && (
             <div className="space-y-1 stagger-children">
-              {sessions.slice(0, 15).map((session) => (
+              {sessions.slice(0, 20).map((session) => (
                 <button
                   key={session.id}
                   onClick={() => onResumeSession(session.id, session.workingDir)}
-                  className="w-full text-left px-4 py-3 rounded-lg hover:bg-muted transition-colors group"
+                  className="w-full text-left px-3 py-2 rounded-md hover:bg-muted transition-colors group"
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="w-7 h-7 rounded-md bg-muted group-hover:bg-background flex items-center justify-center shrink-0 mt-0.5 transition-colors">
-                      <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[13px] text-foreground truncate leading-snug">
-                        {session.firstMessage || 'Empty session'}
-                      </div>
-                      <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        <span>{timeAgo(session.timestamp)}</span>
-                        <span className="text-muted-foreground/30">·</span>
-                        <span className="font-mono">{session.id.slice(0, 8)}</span>
-                      </div>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors mt-1 shrink-0" />
+                  <div className="flex items-center gap-2.5">
+                    <MessageSquare className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
+                    <span className="text-[13px] text-foreground truncate flex-1">
+                      {session.firstMessage || 'Empty session'}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground/60 shrink-0">
+                      {timeAgo(session.timestamp)}
+                    </span>
                   </div>
                 </button>
               ))}
