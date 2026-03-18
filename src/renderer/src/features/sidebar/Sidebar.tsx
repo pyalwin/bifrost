@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Folder, PanelLeftClose, SquarePen, Settings, Clock, Sparkles } from 'lucide-react'
+import { Folder, PanelLeftClose, SquarePen, Settings } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import type { SessionInfo } from '../../types'
 
@@ -154,18 +154,6 @@ export function Sidebar({
             >
               <SquarePen className="w-[18px] h-[18px]" />
               New thread
-            </button>
-            <button
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-[14px] text-foreground/80 hover:bg-muted hover:text-foreground transition-colors"
-            >
-              <Clock className="w-[18px] h-[18px]" />
-              History
-            </button>
-            <button
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-[14px] text-foreground/80 hover:bg-muted hover:text-foreground transition-colors"
-            >
-              <Sparkles className="w-[18px] h-[18px]" />
-              Skills
             </button>
           </div>
 
