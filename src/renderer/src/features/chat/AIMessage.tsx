@@ -9,35 +9,38 @@ interface Props {
   theme: 'light' | 'dark'
 }
 
-const THINKING_PHRASES = [
-  'Thinking',
-  'Reasoning through this',
-  'Exploring the codebase',
-  'Analyzing the context',
-  'Working on it',
-  'Reading the code',
-  'Considering approaches',
-  'Mapping the structure',
-  'Piecing it together',
-  'Digging deeper',
-  'Tracing the logic',
-  'Examining patterns',
-  'Connecting the dots',
-  'Processing',
+// Two-word combo generator inspired by Claude Code CLI's quirky progress text.
+// Picks a random verb + noun and pairs them for an endlessly varied feel.
+const VERBS = [
+  'Pondering', 'Untangling', 'Decoding', 'Inspecting', 'Traversing',
+  'Mapping', 'Parsing', 'Scanning', 'Tracing', 'Unraveling',
+  'Consulting', 'Examining', 'Digesting', 'Navigating', 'Assembling',
+  'Sketching', 'Brewing', 'Distilling', 'Weighing', 'Sifting',
+  'Chasing', 'Collecting', 'Aligning', 'Compiling', 'Resolving',
+  'Deciphering', 'Orchestrating', 'Polishing', 'Refining', 'Synthesizing',
 ]
 
+const NOUNS = [
+  'the logic', 'the architecture', 'possibilities', 'the codebase',
+  'the patterns', 'the details', 'the connections', 'the structure',
+  'the context', 'the approach', 'the dependencies', 'the threads',
+  'the evidence', 'the implications', 'the abstractions', 'the flow',
+  'the signals', 'the constraints', 'the layers', 'the edges',
+  'the pieces', 'the strategy', 'the fundamentals', 'the pathways',
+]
+
+function generatePhrase(): string {
+  const verb = VERBS[Math.floor(Math.random() * VERBS.length)]
+  const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)]
+  return `${verb} ${noun}`
+}
+
 function ThinkingDots() {
-  const [phraseIndex, setPhraseIndex] = useState(
-    () => Math.floor(Math.random() * THINKING_PHRASES.length)
-  )
+  const [phrase, setPhrase] = useState(generatePhrase)
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setPhraseIndex(prev => {
-        let next: number
-        do { next = Math.floor(Math.random() * THINKING_PHRASES.length) } while (next === prev)
-        return next
-      })
+      setPhrase(generatePhrase())
     }, 3000)
     return () => clearInterval(interval)
   }, [])
@@ -49,8 +52,8 @@ function ThinkingDots() {
         <span className="thinking-dot block w-[5px] h-[5px] rounded-full bg-muted-foreground/60" />
         <span className="thinking-dot block w-[5px] h-[5px] rounded-full bg-muted-foreground/60" />
       </div>
-      <span key={phraseIndex} className="text-[13px] text-muted-foreground animate-fade-in">
-        {THINKING_PHRASES[phraseIndex]}
+      <span key={phrase} className="text-[13px] text-muted-foreground animate-fade-in">
+        {phrase}
       </span>
     </div>
   )
