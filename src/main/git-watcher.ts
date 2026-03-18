@@ -18,6 +18,7 @@ export class GitWatcher extends EventEmitter {
 
   start(): void {
     const gitDir = join(this.workingDir, '.git')
+    console.log(`[GitWatcher] Starting for: ${this.workingDir}`)
     if (!existsSync(gitDir)) {
       console.warn('[GitWatcher] Not a git repository:', this.workingDir)
       return
@@ -36,6 +37,7 @@ export class GitWatcher extends EventEmitter {
   }
 
   forceRefresh(): void {
+    console.log('[GitWatcher] Force refresh triggered')
     if (this.debounceTimer) clearTimeout(this.debounceTimer)
     this.refresh()
   }
@@ -47,12 +49,21 @@ export class GitWatcher extends EventEmitter {
 
   private refresh(): void {
     try {
-      const diffOutput = execSync('git diff HEAD', {
+      // Get both unstaged and staged changes
+      const unstaged = execSync('git diff', {
         cwd: this.workingDir,
         encoding: 'utf-8',
         maxBuffer: 10 * 1024 * 1024
       })
-      const files = parseUnifiedDiff(diffOutput)
+      const staged = execSync('git diff --cached', {
+        cwd: this.workingDir,
+        encoding: 'utf-8',
+        maxBuffer: 10 * 1024 * 1024
+      })
+      // Combine both diffs
+      const combinedDiff = (unstaged + '\n' + staged).trim()
+      const files = parseUnifiedDiff(combinedDiff)
+      console.log(`[GitWatcher] Refresh: ${files.length} changed files`)
       this.emit('diff-update', files)
 
       const branch = execSync('git rev-parse --abbrev-ref HEAD', {

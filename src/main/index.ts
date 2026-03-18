@@ -67,10 +67,12 @@ function setupGitWatcher(workingDir: string): void {
   gitWatcher = new GitWatcher(workingDir)
 
   gitWatcher.on('diff-update', (diffs) => {
+    console.log(`[Main] Sending ${(diffs as any[]).length} diffs to renderer`)
     safeSend('claude:diff-update', diffs)
   })
 
   gitWatcher.on('branch-change', (branch) => {
+    console.log(`[Main] Branch changed to: ${branch}`)
     safeSend('claude:branch-change', branch)
   })
 
@@ -177,13 +179,20 @@ function forwardSessionEvents(): void {
   sessionManager.on('cli-event', (event: Record<string, unknown>) => {
     safeSend('claude:message', event)
 
-    // If it's a tool_use summary for an edit tool, refresh git diffs
-    if (
-      event.type === 'tool_use_summary' &&
-      typeof event.tool === 'string' &&
-      EDIT_TOOLS.has(event.tool)
-    ) {
-      gitWatcher?.forceRefresh()
+    // Refresh diffs after edit tools or when a turn completes
+    if (event.type === 'tool_use_summary') {
+      const toolName = (event.tool_name ?? event.tool ?? '') as string
+      console.log(`[Main] tool_use_summary: ${toolName}`)
+      if (EDIT_TOOLS.has(toolName)) {
+        console.log('[Main] Edit tool detected, forcing git refresh')
+        gitWatcher?.forceRefresh()
+      }
+    }
+
+    // Always refresh diffs when a turn completes — catches any file changes
+    if (event.type === 'result') {
+      console.log('[Main] Turn complete, refreshing diffs')
+      setTimeout(() => gitWatcher?.forceRefresh(), 500)
     }
   })
 
