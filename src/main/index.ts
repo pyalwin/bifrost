@@ -133,7 +133,7 @@ function registerIpcHandlers(): void {
   )
 
   ipcMain.handle('claude:send-message', async (_event, text: string) => {
-    sessionManager.sendMessage(text)
+    await sessionManager.sendMessage(text)
   })
 
   ipcMain.handle(

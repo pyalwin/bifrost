@@ -14,6 +14,7 @@ export class SessionManager extends EventEmitter {
   private _workingDir: string | null = null
   private reconnectAttempts = 0
   private maxReconnectAttempts = 3
+  private _expectingDisconnect = false
   public manualApproval = false
 
   constructor(bridge: WsBridge) {
@@ -26,6 +27,15 @@ export class SessionManager extends EventEmitter {
     })
 
     bridge.on('disconnected', () => {
+      if (this._expectingDisconnect) {
+        // Normal disconnect after --print mode turn completion.
+        // Stay "active" and re-spawn for next turn silently.
+        this._expectingDisconnect = false
+        console.log('[SessionManager] Turn complete, ready for next message')
+        this.process = null
+        // Don't change state — stay active so user can send next message
+        return
+      }
       if (this._state === 'active') {
         this.setState('disconnected')
         this.attemptReconnect()
@@ -35,6 +45,9 @@ export class SessionManager extends EventEmitter {
     bridge.on('cli-event', (event: Record<string, unknown>) => {
       if (event.type === 'result' && event.session_id) {
         this._sessionId = event.session_id as string
+        // In --print mode, CLI exits after each turn.
+        // Mark that we expect a disconnect so we re-spawn cleanly.
+        this._expectingDisconnect = true
       }
       if (event.type === 'control_request' && !this.manualApproval) {
         this.bridge.sendToClient({
@@ -78,7 +91,14 @@ export class SessionManager extends EventEmitter {
     await this.spawnCLI(workingDir, model, sessionId)
   }
 
-  sendMessage(text: string): void {
+  async sendMessage(text: string): Promise<void> {
+    // In --print mode, the CLI exits after each turn.
+    // If process is dead, re-spawn with --resume before sending.
+    if (!this.process && this._sessionId && this._workingDir) {
+      console.log('[SessionManager] Re-spawning CLI for next turn')
+      await this.spawnCLI(this._workingDir, undefined, this._sessionId)
+    }
+
     this.bridge.sendToClient({
       type: 'user',
       message: { role: 'user', content: text },
