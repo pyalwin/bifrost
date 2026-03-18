@@ -63,6 +63,7 @@ export type ConnectionState = 'idle' | 'connecting' | 'active' | 'disconnected'
 export interface SessionInfo {
   id: string
   workingDir: string
+  firstMessage: string
   timestamp: number
 }
 

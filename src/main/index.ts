@@ -5,6 +5,7 @@ import Store from 'electron-store'
 import { WsBridge } from './ws-bridge'
 import { SessionManager } from './session-manager'
 import { GitWatcher } from './git-watcher'
+import { discoverSessions, discoverAllSessions } from './session-discovery'
 
 const store = new Store()
 const bridge = new WsBridge()
@@ -150,13 +151,13 @@ function registerIpcHandlers(): void {
   })
 
   ipcMain.handle('claude:list-sessions', async () => {
-    const sessions = (store.get('sessions', []) as Array<{
-      id: string
-      workingDir: string
-      timestamp: number
-    }>)
-    // Return sorted newest-first
-    return sessions.sort((a, b) => b.timestamp - a.timestamp)
+    // Discover actual Claude sessions from ~/.claude/projects/
+    return discoverAllSessions()
+  })
+
+  ipcMain.handle('claude:list-sessions-for-dir', async (_event, workingDir: string) => {
+    // Discover sessions for a specific working directory
+    return discoverSessions(workingDir)
   })
 
   ipcMain.handle('claude:select-directory', async () => {
