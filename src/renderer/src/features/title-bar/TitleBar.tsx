@@ -44,6 +44,16 @@ export function TitleBar({
   return (
     <div className="h-12 bg-title-bar border-b border-border flex items-center px-4 pl-20 select-none"
          style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
+      {/* Sidebar toggle — sits within sidebar width area */}
+      <button
+        onClick={onToggleSidebar}
+        title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+        className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-muted transition-colors text-muted-foreground/60 hover:text-foreground mr-3"
+        style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+      >
+        {sidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
+      </button>
+
       <span className="font-semibold text-sm tracking-tight flex items-center gap-2">
         Claude Code
         <span className={cn('w-2 h-2 rounded-full', stateColors[connectionState])} />
@@ -75,13 +85,6 @@ export function TitleBar({
       )}
       <div className="ml-auto flex items-center gap-2"
            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
-        <button
-          onClick={onToggleSidebar}
-          title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-          className="w-8 h-8 flex items-center justify-center border border-border rounded-lg bg-background hover:bg-muted transition-colors"
-        >
-          {sidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
-        </button>
         <button
           onClick={onToggleApproval}
           title={manualApproval ? 'Manual approval on' : 'Auto-approve on'}

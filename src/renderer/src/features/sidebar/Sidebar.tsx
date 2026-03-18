@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Folder, PanelLeftClose, SquarePen } from 'lucide-react'
+import { Folder, PanelLeftClose, PanelLeftOpen, SquarePen } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import type { SessionInfo } from '../../types'
 
@@ -158,15 +158,8 @@ export function Sidebar({
           </div>
 
           {/* Threads label */}
-          <div className="flex items-center justify-between px-4 pt-4 pb-1">
+          <div className="px-4 pt-4 pb-1">
             <span className="text-[12px] font-medium text-muted-foreground/60">Threads</span>
-            <button
-              onClick={onToggle}
-              title="Collapse sidebar"
-              className="w-5 h-5 flex items-center justify-center rounded hover:bg-muted transition-colors text-muted-foreground/40 hover:text-foreground"
-            >
-              <PanelLeftClose className="w-3.5 h-3.5" />
-            </button>
           </div>
 
           {/* Project groups with sessions */}
