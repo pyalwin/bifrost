@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { DiffFileData, InlineComment, ReviewComment } from '../../types'
+import { useGitUser } from '../../hooks/use-git-user'
 import { DiffFileHeader } from './DiffFileHeader'
 import { DiffHunkView } from './DiffHunkView'
 
@@ -18,6 +19,7 @@ interface Props {
 export function DiffFile({ file, theme, reviewMode, reviewComments, commentingLine, onLineClick, onAddComment, onCancelComment, onRemoveComment }: Props) {
   const [collapsed, setCollapsed] = useState(false)
   const [viewed, setViewed] = useState(false)
+  const gitUser = useGitUser()
   const [comments, setComments] = useState<InlineComment[]>(file.comments)
 
   const commentsByLine = new Map<number, InlineComment[]>()
@@ -43,7 +45,7 @@ export function DiffFile({ file, theme, reviewMode, reviewComments, commentingLi
                 {
                   id: `${parentId}-r${c.replies.length + 1}`,
                   lineNumber: c.lineNumber,
-                  author: 'You',
+                  author: gitUser.name,
                   text,
                   timestamp: 'just now',
                   resolved: false,

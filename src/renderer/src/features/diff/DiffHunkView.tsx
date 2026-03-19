@@ -3,6 +3,7 @@ import type { DiffHunk, DiffLine, InlineComment, ReviewComment } from '../../typ
 import { cn } from '../../lib/utils'
 import { InlineCommentThread } from './InlineCommentThread'
 import { highlightLine } from './highlighter'
+import { useGitUser } from '../../hooks/use-git-user'
 
 interface Props {
   hunks: DiffHunk[]
@@ -108,6 +109,7 @@ export function DiffHunkView({
   hunks, language, theme, commentsByLine, onLineClick, onResolve, onReply,
   reviewComments, commentingLine, onAddComment, onCancelComment, onRemoveComment,
 }: Props) {
+  const gitUser = useGitUser()
   return (
     <div className="font-mono text-xs leading-[1.85]">
       {hunks.map((hunk, hi) => (
@@ -139,8 +141,8 @@ export function DiffHunkView({
                   <div key={rc.id} className="px-4 py-1.5 bg-muted/50 border-y border-border/50">
                     <div className="ml-10 bg-background border border-border rounded-md px-3 py-2">
                       <div className="flex items-center gap-2 mb-1 font-sans">
-                        <div className="w-5 h-5 bg-muted-foreground/15 rounded-full flex items-center justify-center text-[9px] font-semibold text-muted-foreground">Y</div>
-                        <span className="text-[11px] font-semibold">You</span>
+                        <div className="w-5 h-5 bg-muted-foreground/15 rounded-full flex items-center justify-center text-[9px] font-semibold text-muted-foreground">{gitUser.initial}</div>
+                        <span className="text-[11px] font-semibold">{gitUser.name}</span>
                         <span className="text-[11px] text-muted-foreground">· L{rc.lineNumber}</span>
                         {onRemoveComment && (
                           <button

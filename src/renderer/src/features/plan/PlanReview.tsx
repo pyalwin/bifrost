@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { cn } from '../../lib/utils'
+import { useGitUser } from '../../hooks/use-git-user'
 import type { PlanComment } from '../../types'
 
 interface Props {
@@ -14,12 +15,12 @@ interface Props {
   onRevise: (comments: PlanComment[]) => void
 }
 
-function CommentBubble({ comment, onDelete }: { comment: PlanComment; onDelete: () => void }) {
+function CommentBubble({ comment, onDelete, userName, userInitial }: { comment: PlanComment; onDelete: () => void; userName: string; userInitial: string }) {
   return (
     <div className="mt-2 mb-1 bg-muted border border-border rounded-lg px-3 py-2.5">
       <div className="flex items-center gap-1.5 mb-1">
-        <div className="w-[18px] h-[18px] rounded-full bg-accent flex items-center justify-center text-[9px] font-bold text-muted-foreground">Y</div>
-        <span className="text-[11px] font-semibold text-secondary">You</span>
+        <div className="w-[18px] h-[18px] rounded-full bg-accent flex items-center justify-center text-[9px] font-bold text-muted-foreground">{userInitial}</div>
+        <span className="text-[11px] font-semibold text-secondary">{userName}</span>
         <button onClick={onDelete} className="ml-auto text-[10px] text-muted-foreground hover:text-foreground transition-colors">Delete</button>
       </div>
       <p className="text-[12px] text-foreground leading-relaxed">{comment.text}</p>
@@ -54,6 +55,7 @@ function CommentInput({ onSave, onCancel }: { onSave: (text: string) => void; on
 export function PlanReview({ title, filePath, content, theme, onClose, onApprove, onRevise }: Props) {
   const [comments, setComments] = useState<PlanComment[]>([])
   const [commentingBlock, setCommentingBlock] = useState<number | null>(null)
+  const gitUser = useGitUser()
 
   // Split markdown into blocks — respects code fences, groups by double newline
   const blocks = useMemo(() => {
@@ -162,7 +164,7 @@ export function PlanReview({ title, filePath, content, theme, onClose, onApprove
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{block}</ReactMarkdown>
                   </div>
                   {blockComments.map(c => (
-                    <CommentBubble key={c.id} comment={c} onDelete={() => deleteComment(c.id)} />
+                    <CommentBubble key={c.id} comment={c} onDelete={() => deleteComment(c.id)} userName={gitUser.name} userInitial={gitUser.initial} />
                   ))}
                   {commentingBlock === i && (
                     <CommentInput onSave={(text) => addComment(i, text)} onCancel={() => setCommentingBlock(null)} />

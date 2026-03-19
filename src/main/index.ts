@@ -268,6 +268,18 @@ function registerIpcHandlers(): void {
     }
   })
 
+  ipcMain.handle('claude:get-git-user', async () => {
+    const workingDir = sessionManager.workingDir
+    if (!workingDir) return { name: 'You', initial: 'Y' }
+    try {
+      const { execSync } = await import('child_process')
+      const name = execSync('git config user.name', { cwd: workingDir, encoding: 'utf-8' }).trim()
+      return { name: name || 'You', initial: (name?.[0] ?? 'Y').toUpperCase() }
+    } catch {
+      return { name: 'You', initial: 'Y' }
+    }
+  })
+
   ipcMain.handle('claude:list-branches', async () => {
     const workingDir = sessionManager.workingDir
     if (!workingDir) return []
