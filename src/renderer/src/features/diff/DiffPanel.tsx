@@ -8,14 +8,20 @@ interface Props {
   files: DiffFileData[]
   theme: 'light' | 'dark'
   onSubmitReview?: (review: Review) => void
+  reviewComments?: ReviewComment[]
+  onAddReviewComment?: (comment: ReviewComment) => void
+  onRemoveReviewComment?: (id: string) => void
 }
 
 const BATCH_SIZE = 3
 
-export function DiffPanel({ files, theme, onSubmitReview }: Props) {
+export function DiffPanel({ files, theme, onSubmitReview, reviewComments: externalComments, onAddReviewComment, onRemoveReviewComment }: Props) {
   const [reviewMode, setReviewMode] = useState(false)
-  const [reviewComments, setReviewComments] = useState<ReviewComment[]>([])
+  const [localComments, setLocalComments] = useState<ReviewComment[]>([])
   const [commentingLine, setCommentingLine] = useState<{ filename: string; lineNumber: number } | null>(null)
+
+  // Use external comments if provided, otherwise fall back to local state
+  const reviewComments = externalComments ?? localComments
   const [renderedCount, setRenderedCount] = useState(BATCH_SIZE)
   const prevFileKeyRef = useRef('')
 
@@ -52,14 +58,22 @@ export function DiffPanel({ files, theme, onSubmitReview }: Props) {
       timestamp: Date.now(),
       resolved: false,
     }
-    setReviewComments(prev => [...prev, comment])
+    if (onAddReviewComment) {
+      onAddReviewComment(comment)
+    } else {
+      setLocalComments(prev => [...prev, comment])
+    }
     setCommentingLine(null)
   }
 
   const handleCancelComment = () => setCommentingLine(null)
 
   const handleRemoveComment = (id: string) => {
-    setReviewComments(prev => prev.filter(c => c.id !== id))
+    if (onRemoveReviewComment) {
+      onRemoveReviewComment(id)
+    } else {
+      setLocalComments(prev => prev.filter(c => c.id !== id))
+    }
   }
 
   const handleSubmitReview = () => {
@@ -71,13 +85,12 @@ export function DiffPanel({ files, theme, onSubmitReview }: Props) {
       createdAt: Date.now(),
     }
     onSubmitReview?.(review)
-    setReviewComments([])
+    // Don't clear comments — they stay visible as part of the review history
     setReviewMode(false)
     setCommentingLine(null)
   }
 
   const handleCancelReview = () => {
-    setReviewComments([])
     setReviewMode(false)
     setCommentingLine(null)
   }

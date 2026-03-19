@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import type { DiffFileData, Review } from '../../types'
+import type { DiffFileData, Review, ReviewComment } from '../../types'
 import { DiffPanel } from './DiffPanel'
 import { ReviewTabsBar } from './ReviewTabsBar'
 import { cn } from '../../lib/utils'
@@ -15,9 +15,12 @@ interface Props {
   onSubmitReview: (review: Review) => void
   selectedFile?: string | null
   hasUncommitted?: boolean
+  reviewComments?: ReviewComment[]
+  onAddReviewComment?: (comment: ReviewComment) => void
+  onRemoveReviewComment?: (id: string) => void
 }
 
-export function FilesChangedView({ files, theme, reviews, activeReviewId, onSelectReview, onSubmitReview, selectedFile, hasUncommitted }: Props) {
+export function FilesChangedView({ files, theme, reviews, activeReviewId, onSelectReview, onSubmitReview, selectedFile, hasUncommitted, reviewComments, onAddReviewComment, onRemoveReviewComment }: Props) {
   const [diffMode, setDiffMode] = useState<DiffMode>(hasUncommitted ? 'local' : 'all')
   const [localFiles, setLocalFiles] = useState<DiffFileData[]>([])
   const [loadingLocal, setLoadingLocal] = useState(false)
@@ -84,7 +87,7 @@ export function FilesChangedView({ files, theme, reviews, activeReviewId, onSele
             Loading local changes...
           </div>
         ) : (
-          <DiffPanel files={displayFiles} theme={theme} onSubmitReview={onSubmitReview} />
+          <DiffPanel files={displayFiles} theme={theme} onSubmitReview={onSubmitReview} reviewComments={reviewComments} onAddReviewComment={onAddReviewComment} onRemoveReviewComment={onRemoveReviewComment} />
         )}
       </div>
     </div>

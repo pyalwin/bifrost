@@ -7,7 +7,7 @@ import { ChatPanel } from './features/chat/ChatPanel'
 import { FilesChangedView } from './features/diff/FilesChangedView'
 import { FileTree } from './features/diff/FileTree'
 import { MainTabBar, type TabId } from './features/tabs/MainTabBar'
-import type { Review, PullRequest, PlanComment } from './types/index'
+import type { Review, ReviewComment, PullRequest, PlanComment } from './types/index'
 import { CreatePRDialog } from './features/pr/CreatePRDialog'
 import { PlanReview } from './features/plan/PlanReview'
 import { CommitsView } from './features/commits/CommitsView'
@@ -28,6 +28,15 @@ export default function App() {
   const [model, setModel] = useState(() => localStorage.getItem('bifrost-model') ?? 'sonnet')
   const [reviews, setReviews] = useState<Review[]>([])
   const [activeReviewId, setActiveReviewId] = useState<string | null>(null)
+  const [allReviewComments, setAllReviewComments] = useState<ReviewComment[]>([])
+
+  const handleAddReviewComment = useCallback((comment: ReviewComment) => {
+    setAllReviewComments(prev => [...prev, comment])
+  }, [])
+
+  const handleRemoveReviewComment = useCallback((id: string) => {
+    setAllReviewComments(prev => prev.filter(c => c.id !== id))
+  }, [])
   const [currentPR, setCurrentPR] = useState<PullRequest | null>(null)
   const [showCreatePR, setShowCreatePR] = useState(false)
   const [prCreating, setPrCreating] = useState(false)
@@ -290,6 +299,9 @@ export default function App() {
                 onSubmitReview={handleSubmitReview}
                 selectedFile={selectedFile}
                 hasUncommitted={gitStatus.hasUncommitted}
+                reviewComments={allReviewComments}
+                onAddReviewComment={handleAddReviewComment}
+                onRemoveReviewComment={handleRemoveReviewComment}
               />
             )}
 
