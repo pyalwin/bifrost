@@ -47,10 +47,13 @@ function LineRow({
       )}
     >
       <span
-        className="inline-block w-10 text-right mr-4 select-none text-muted-foreground shrink-0 cursor-pointer hover:text-foreground transition-colors"
+        className={cn(
+          "inline-block w-10 text-right mr-4 select-none text-muted-foreground/50 shrink-0 text-[11px]",
+          onGutterClick && "cursor-pointer hover:text-blue-400 hover:bg-blue-400/10 rounded transition-colors"
+        )}
         onClick={onGutterClick}
       >
-        {line.type === 'removed' ? '\u2212' : line.type === 'added' ? '+' : ''}
+        {line.newLineNumber ?? line.oldLineNumber ?? ''}
       </span>
       {html ? (
         <span className="whitespace-pre-wrap break-all" dangerouslySetInnerHTML={{ __html: html }} />
@@ -111,7 +114,7 @@ export function DiffHunkView({
         <div key={hi}>
           {hi > 0 && <div className="h-3" />}
           {hunk.lines.map((line, li) => {
-            const lineNum = line.newLineNumber
+            const lineNum = line.newLineNumber ?? line.oldLineNumber
             const lineComments = lineNum ? commentsByLine?.get(lineNum) : undefined
             const lineReviewComments = lineNum ? reviewComments?.filter(c => c.lineNumber === lineNum) : undefined
             return (
