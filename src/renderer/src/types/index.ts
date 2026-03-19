@@ -142,6 +142,19 @@ export type CLIEvent =
     }
   | { type: 'keep_alive' }
 
+export interface PullRequest {
+  number: number
+  title: string
+  url: string
+  state: 'OPEN' | 'CLOSED' | 'MERGED'
+  isDraft: boolean
+  baseBranch: string
+  headBranch: string
+  additions: number
+  deletions: number
+  commits: number
+}
+
 export interface ClaudeAPI {
   startSession(workingDir: string): Promise<void>
   resumeSession(sessionId: string, workingDir: string): Promise<void>
@@ -163,6 +176,8 @@ export interface ClaudeAPI {
   checkoutBranch(branchName: string, createNew: boolean): Promise<{ success: boolean; error?: string }>
   setBaseBranch(branch: string | null): Promise<void>
   getBaseBranch(): Promise<string | null>
+  getPullRequest(): Promise<PullRequest | null>
+  createPullRequest(title: string, body: string, baseBranch?: string): Promise<{ success: boolean; pr?: PullRequest; error?: string }>
 }
 
 declare global {

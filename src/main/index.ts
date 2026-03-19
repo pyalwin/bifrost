@@ -320,6 +320,71 @@ function registerIpcHandlers(): void {
     const baseBranches = (store.get('baseBranches', {}) as Record<string, string>)
     return baseBranches[workingDir] ?? null
   })
+
+  ipcMain.handle('claude:get-pull-request', async () => {
+    const workingDir = sessionManager.workingDir
+    if (!workingDir) return null
+    try {
+      const { execSync } = await import('child_process')
+      const output = execSync('gh pr view --json number,title,url,state,isDraft,baseRefName,headRefName,additions,deletions,commits', {
+        cwd: workingDir,
+        encoding: 'utf-8',
+        timeout: 10000,
+      }).trim()
+      const data = JSON.parse(output)
+      return {
+        number: data.number,
+        title: data.title,
+        url: data.url,
+        state: data.state,
+        isDraft: data.isDraft,
+        baseBranch: data.baseRefName,
+        headBranch: data.headRefName,
+        additions: data.additions,
+        deletions: data.deletions,
+        commits: Array.isArray(data.commits) ? data.commits.length : (data.commits ?? 0),
+      }
+    } catch {
+      return null
+    }
+  })
+
+  ipcMain.handle('claude:create-pull-request', async (_event, title: string, body: string, baseBranch?: string) => {
+    const workingDir = sessionManager.workingDir
+    if (!workingDir) return { success: false, error: 'No working directory' }
+    try {
+      const { execSync } = await import('child_process')
+      const safeTitle = title.replace(/'/g, "'\\''")
+      const safeBody = body.replace(/'/g, "'\\''")
+      let cmd = `gh pr create --title '${safeTitle}' --body '${safeBody}'`
+      if (baseBranch) cmd += ` --base '${baseBranch.replace(/'/g, "'\\''")}'`
+      execSync(cmd, { cwd: workingDir, encoding: 'utf-8', timeout: 30000 })
+
+      const prOutput = execSync('gh pr view --json number,title,url,state,isDraft,baseRefName,headRefName,additions,deletions,commits', {
+        cwd: workingDir,
+        encoding: 'utf-8',
+        timeout: 10000,
+      }).trim()
+      const data = JSON.parse(prOutput)
+      return {
+        success: true,
+        pr: {
+          number: data.number,
+          title: data.title,
+          url: data.url,
+          state: data.state,
+          isDraft: data.isDraft,
+          baseBranch: data.baseRefName,
+          headBranch: data.headRefName,
+          additions: data.additions,
+          deletions: data.deletions,
+          commits: Array.isArray(data.commits) ? data.commits.length : (data.commits ?? 0),
+        }
+      }
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
 }
 
 function safeSend(channel: string, ...args: unknown[]): void {
