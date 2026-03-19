@@ -8,6 +8,7 @@ import { DiffPanel } from './features/diff/DiffPanel'
 import { ReviewTabsBar } from './features/diff/ReviewTabsBar'
 import { cn } from './lib/utils'
 import type { Review, PullRequest } from './types/index'
+import { CreatePRDialog } from './features/pr/CreatePRDialog'
 
 export default function App() {
   const { theme, toggleTheme } = useTheme()
@@ -20,7 +21,9 @@ export default function App() {
   const [reviews, setReviews] = useState<Review[]>([])
   const [activeReviewId, setActiveReviewId] = useState<string | null>(null)
   const [currentPR, setCurrentPR] = useState<PullRequest | null>(null)
-  const [_showCreatePR, setShowCreatePR] = useState(false)
+  const [showCreatePR, setShowCreatePR] = useState(false)
+  const [prCreating, setPrCreating] = useState(false)
+  const [prError, setPrError] = useState<string | null>(null)
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -104,6 +107,24 @@ export default function App() {
     }
   }, [claude])
 
+  const handleCreatePR = useCallback(async (title: string, body: string) => {
+    setPrCreating(true)
+    setPrError(null)
+    try {
+      const result = await window.claude?.createPullRequest(title, body)
+      if (result?.success && result.pr) {
+        setCurrentPR(result.pr)
+        setShowCreatePR(false)
+      } else {
+        setPrError(result?.error ?? 'Failed to create PR')
+      }
+    } catch (err) {
+      setPrError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setPrCreating(false)
+    }
+  }, [])
+
   // Compute diff stats for title bar — always show so user can toggle the pane
   const diffStats = {
     additions: claude.diffs.reduce((sum, f) => sum + f.additions, 0),
@@ -172,6 +193,16 @@ export default function App() {
           )}
         </div>
       </div>
+      {showCreatePR && (
+        <CreatePRDialog
+          branchName={claude.branch || ''}
+          baseBranch="main"
+          onSubmit={handleCreatePR}
+          onCancel={() => { setShowCreatePR(false); setPrError(null) }}
+          isSubmitting={prCreating}
+          error={prError}
+        />
+      )}
     </div>
   )
 }
