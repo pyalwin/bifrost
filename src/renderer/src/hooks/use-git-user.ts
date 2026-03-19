@@ -15,7 +15,8 @@ export function useGitUser(projectPath?: string): GitUser {
   useEffect(() => {
     // Re-fetch when project changes
     if (cached && cachedForProject === projectPath) return
-    window.claude?.getGitUser()
+    if (typeof window.claude?.getGitUser !== 'function') return
+    window.claude.getGitUser()
       .then(u => {
         cached = u
         cachedForProject = projectPath ?? null
