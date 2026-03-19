@@ -35,7 +35,7 @@ function LineRow({
   const shikiTheme = theme === 'dark' ? 'github-dark' : 'github-light'
 
   useEffect(() => {
-    highlightLine(line.content, language, shikiTheme).then(setHtml)
+    highlightLine(line.content, language, shikiTheme).then(setHtml).catch(() => {})
   }, [line.content, language, shikiTheme])
 
   return (
