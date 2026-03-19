@@ -129,6 +129,8 @@ export interface ClaudeAPI {
   getArchived(): Promise<{ projects: string[]; sessions: string[] }>
   listBranches(): Promise<string[]>
   checkoutBranch(branchName: string, createNew: boolean): Promise<{ success: boolean; error?: string }>
+  setBaseBranch(branch: string | null): Promise<void>
+  getBaseBranch(): Promise<string | null>
 }
 
 declare global {

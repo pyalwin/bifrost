@@ -49,6 +49,8 @@ const claudeAPI = {
   listBranches: () => ipcRenderer.invoke('claude:list-branches'),
   checkoutBranch: (branchName: string, createNew: boolean) =>
     ipcRenderer.invoke('claude:checkout-branch', branchName, createNew),
+  setBaseBranch: (branch: string | null) => ipcRenderer.invoke('claude:set-base-branch', branch),
+  getBaseBranch: () => ipcRenderer.invoke('claude:get-base-branch'),
 }
 
 if (process.contextIsolated) {

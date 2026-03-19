@@ -79,6 +79,13 @@ function setupGitWatcher(workingDir: string): void {
   })
 
   gitWatcher.start()
+
+  // Restore persisted base branch for this working directory
+  const baseBranches = (store.get('baseBranches', {}) as Record<string, string>)
+  const savedBase = baseBranches[workingDir]
+  if (savedBase) {
+    gitWatcher.setBaseBranch(savedBase)
+  }
 }
 
 function registerIpcHandlers(): void {
@@ -262,6 +269,30 @@ function registerIpcHandlers(): void {
     } catch (err) {
       return { success: false, error: err instanceof Error ? err.message : String(err) }
     }
+  })
+
+  ipcMain.handle('claude:set-base-branch', async (_event, branch: string | null) => {
+    if (gitWatcher) {
+      gitWatcher.setBaseBranch(branch)
+    }
+    // Persist per working directory
+    const workingDir = sessionManager.workingDir
+    if (workingDir) {
+      const baseBranches = (store.get('baseBranches', {}) as Record<string, string>)
+      if (branch) {
+        baseBranches[workingDir] = branch
+      } else {
+        delete baseBranches[workingDir]
+      }
+      store.set('baseBranches', baseBranches)
+    }
+  })
+
+  ipcMain.handle('claude:get-base-branch', async () => {
+    const workingDir = sessionManager.workingDir
+    if (!workingDir) return null
+    const baseBranches = (store.get('baseBranches', {}) as Record<string, string>)
+    return baseBranches[workingDir] ?? null
   })
 }
 

@@ -10,6 +10,7 @@ export class GitWatcher extends EventEmitter {
   private workingDir: string
   private debounceTimer: NodeJS.Timeout | null = null
   private lastBranch: string = ''
+  private baseBranchOverride: string | null = null
 
   constructor(workingDir: string) {
     super()
@@ -38,6 +39,11 @@ export class GitWatcher extends EventEmitter {
     setTimeout(() => this.refresh(), 1000)
   }
 
+  setBaseBranch(branch: string | null): void {
+    this.baseBranchOverride = branch
+    this.forceRefresh()
+  }
+
   forceRefresh(): void {
     console.log('[GitWatcher] Force refresh triggered')
     if (this.debounceTimer) clearTimeout(this.debounceTimer)
@@ -58,6 +64,7 @@ export class GitWatcher extends EventEmitter {
   }
 
   private findBaseBranch(): string | null {
+    if (this.baseBranchOverride) return this.baseBranchOverride
     // Check if main or master exists as a local branch
     for (const candidate of ['main', 'master']) {
       try {
