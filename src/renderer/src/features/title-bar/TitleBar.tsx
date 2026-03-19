@@ -319,26 +319,26 @@ export function TitleBar({
           {showOpenMenu && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setShowOpenMenu(false)} />
-              <div className="absolute top-full right-0 mt-2 w-48 bg-background border border-border rounded-lg shadow-lg z-50 animate-fade-in-up overflow-hidden py-1">
+              <div className="absolute top-full right-0 mt-1.5 w-40 bg-background border border-border rounded-lg shadow-lg z-50 animate-fade-in-up overflow-hidden py-0.5">
                 <button
                   onClick={() => { window.claude?.openInIDE('vscode'); setShowOpenMenu(false) }}
-                  className="w-full text-left px-3 py-2 text-[13px] hover:bg-muted transition-colors flex items-center gap-2"
+                  className="w-full text-left px-2.5 py-1.5 text-[12px] hover:bg-muted transition-colors flex items-center gap-2"
                 >
-                  <span className="text-[16px]">📘</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M17.583 2.248L12.23 6.62 7.995 3.937l-5.37 2.229v11.668l5.37 2.229 9.588-8.09 4.792 1.952V7.01l-4.792-4.762z" fill="#007ACC"/><path d="M12.23 6.62L7.995 3.937l-5.37 2.229v11.668l5.37 2.229L17.583 12 12.23 6.62z" fill="#1F9CF0" opacity="0.8"/></svg>
                   VS Code
                 </button>
                 <button
                   onClick={() => { window.claude?.openInIDE('cursor'); setShowOpenMenu(false) }}
-                  className="w-full text-left px-3 py-2 text-[13px] hover:bg-muted transition-colors flex items-center gap-2"
+                  className="w-full text-left px-2.5 py-1.5 text-[12px] hover:bg-muted transition-colors flex items-center gap-2"
                 >
-                  <span className="text-[16px]">⚡</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="5" fill="#000"/><path d="M6 12h6m0 0l-3-3m3 3l-3 3m6-9l3 3-3 3" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   Cursor
                 </button>
                 <button
                   onClick={() => { window.claude?.openInIDE('pycharm'); setShowOpenMenu(false) }}
-                  className="w-full text-left px-3 py-2 text-[13px] hover:bg-muted transition-colors flex items-center gap-2"
+                  className="w-full text-left px-2.5 py-1.5 text-[12px] hover:bg-muted transition-colors flex items-center gap-2"
                 >
-                  <span className="text-[16px]">🐍</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="4" fill="#21D789"/><rect x="4" y="4" width="7" height="1.5" fill="#000"/><path d="M4 8h3v6H4zm5-2h3v8H9z" fill="#000" opacity="0.8"/><rect x="4" y="17" width="8" height="1.5" fill="#000"/></svg>
                   PyCharm
                 </button>
               </div>
