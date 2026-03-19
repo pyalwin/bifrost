@@ -142,8 +142,8 @@ function registerIpcHandlers(): void {
     }
   )
 
-  ipcMain.handle('claude:send-message', async (_event, text: string) => {
-    await sessionManager.sendMessage(text)
+  ipcMain.handle('claude:send-message', async (_event, text: string, images?: Array<{ base64: string; mediaType: string }>) => {
+    await sessionManager.sendMessage(text, images)
   })
 
   ipcMain.handle(
@@ -176,6 +176,32 @@ function registerIpcHandlers(): void {
     })
     if (result.canceled || result.filePaths.length === 0) return null
     return result.filePaths[0]
+  })
+
+  ipcMain.handle('claude:select-images', async () => {
+    if (!mainWindow) return []
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openFile', 'multiSelections'],
+      filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'] }],
+    })
+    if (result.canceled || result.filePaths.length === 0) return []
+
+    const { readFileSync } = await import('fs')
+    const { extname, basename } = await import('path')
+
+    const mimeTypes: Record<string, string> = {
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.gif': 'image/gif',
+      '.webp': 'image/webp',
+    }
+
+    return result.filePaths.map(fp => ({
+      base64: readFileSync(fp).toString('base64'),
+      mediaType: mimeTypes[extname(fp).toLowerCase()] ?? 'image/png',
+      name: basename(fp),
+    }))
   })
 
   ipcMain.handle('claude:archive-item', async (_event, type: 'project' | 'session', id: string) => {

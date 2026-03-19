@@ -9,10 +9,17 @@ export interface ToolUsage {
   children?: ToolUsage[]
 }
 
+export interface ImageAttachment {
+  base64: string
+  mediaType: string
+  name: string
+}
+
 export interface Message {
   id: string
   role: MessageRole
   content: string
+  images?: ImageAttachment[]
   thinkingTime?: number
   tools?: ToolUsage[]
   isStreaming?: boolean      // true while this message is still being streamed
@@ -109,7 +116,8 @@ export interface ClaudeAPI {
   resumeSession(sessionId: string, workingDir: string): Promise<void>
   listSessions(): Promise<SessionInfo[]>
   cancelTurn(): Promise<void>
-  sendMessage(text: string): Promise<void>
+  sendMessage(text: string, images?: ImageAttachment[]): Promise<void>
+  selectImages(): Promise<ImageAttachment[]>
   sendControlResponse(requestId: string, approved: boolean): Promise<void>
   onMessage(callback: (event: CLIEvent) => void): () => void
   onConnectionStateChange(callback: (state: ConnectionState) => void): () => void

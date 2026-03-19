@@ -9,7 +9,9 @@ const claudeAPI = {
   listSessionsForDir: (workingDir: string) => ipcRenderer.invoke('claude:list-sessions-for-dir', workingDir),
   listProjects: () => ipcRenderer.invoke('claude:list-projects'),
   cancelTurn: () => ipcRenderer.invoke('claude:cancel-turn'),
-  sendMessage: (text: string) => ipcRenderer.invoke('claude:send-message', text),
+  sendMessage: (text: string, images?: Array<{ base64: string; mediaType: string; name: string }>) =>
+    ipcRenderer.invoke('claude:send-message', text, images),
+  selectImages: () => ipcRenderer.invoke('claude:select-images'),
   sendControlResponse: (requestId: string, approved: boolean) =>
     ipcRenderer.invoke('claude:control-response', requestId, approved),
 
