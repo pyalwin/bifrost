@@ -14,8 +14,6 @@ interface TitleBarProps {
   onToggleApproval: () => void
   sidebarOpen: boolean
   onToggleSidebar: () => void
-  diffStats?: { additions: number; deletions: number } | null
-  onToggleDiff?: () => void
   onBranchChange?: () => void
   pullRequest?: { number: number; title: string; url: string; isDraft: boolean; state: string } | null
 }
@@ -38,8 +36,6 @@ export function TitleBar({
   onToggleApproval,
   sidebarOpen,
   onToggleSidebar,
-  diffStats,
-  onToggleDiff,
   onBranchChange,
   pullRequest,
 }: TitleBarProps) {
@@ -305,15 +301,6 @@ export function TitleBar({
               {pullRequest.isDraft ? 'Draft' : 'Open'}
             </span>
           </div>
-        )}
-        {diffStats && (
-          <button
-            onClick={onToggleDiff}
-            className="flex items-center gap-1.5 px-3 py-1.5 border border-border rounded-lg text-[13px] font-medium bg-background hover:bg-muted transition-colors font-mono"
-          >
-            <span className="text-diff-added-text">+{diffStats.additions}</span>
-            <span className="text-diff-removed-text">-{diffStats.deletions}</span>
-          </button>
         )}
         <button
           disabled={openDisabled}

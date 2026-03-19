@@ -6,8 +6,7 @@ import { Sidebar } from './features/sidebar/Sidebar'
 import { ChatPanel } from './features/chat/ChatPanel'
 import { DiffPanel } from './features/diff/DiffPanel'
 import { ReviewTabsBar } from './features/diff/ReviewTabsBar'
-import { cn } from './lib/utils'
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from './components/ui/resizable'
+import { MainTabBar, type TabId } from './features/tabs/MainTabBar'
 import type { Review, PullRequest, PlanComment } from './types/index'
 import { CreatePRDialog } from './features/pr/CreatePRDialog'
 import { PlanReview } from './features/plan/PlanReview'
@@ -18,7 +17,7 @@ export default function App() {
   const [manualApproval, setManualApproval] = useState(false)
   const [_sessionError, setSessionError] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [diffOpen, setDiffOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<TabId>('conversation')
   const [model, setModel] = useState(() => localStorage.getItem('bifrost-model') ?? 'sonnet')
   const [reviews, setReviews] = useState<Review[]>([])
   const [activeReviewId, setActiveReviewId] = useState<string | null>(null)
@@ -38,13 +37,6 @@ export default function App() {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [toggleTheme])
-
-  // Auto-open diff panel when changes arrive
-  useEffect(() => {
-    if (claude.diffs.length > 0 && !diffOpen) {
-      setDiffOpen(true)
-    }
-  }, [claude.diffs.length])
 
   // Fetch PR for current branch
   useEffect(() => {
@@ -164,7 +156,7 @@ export default function App() {
     claude.sendMessage(message)
   }, [claude])
 
-  // Compute diff stats for title bar — always show so user can toggle the pane
+  // Compute diff stats for tab bar
   const diffStats = {
     additions: claude.diffs.reduce((sum, f) => sum + f.additions, 0),
     deletions: claude.diffs.reduce((sum, f) => sum + f.deletions, 0),
@@ -182,71 +174,87 @@ export default function App() {
         onToggleApproval={() => setManualApproval(!manualApproval)}
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-        diffStats={diffStats}
-        onToggleDiff={() => setDiffOpen(!diffOpen)}
         pullRequest={currentPR}
       />
+      <MainTabBar
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        filesCount={claude.diffs.length}
+        reviewCount={reviews.length}
+        diffStats={diffStats}
+      />
       <div className="flex-1 flex overflow-hidden">
-        <Sidebar
-          isOpen={sidebarOpen}
-          onToggle={() => setSidebarOpen(!sidebarOpen)}
-          onNewSession={handleNewSession}
-          onResumeSession={handleResumeSession}
-          activeSessionId={null}
-          currentBranch={claude.branch}
-          pullRequest={currentPR}
-          onCreatePR={() => setShowCreatePR(true)}
-        />
-        <ResizablePanelGroup direction="horizontal">
-          {/* Chat panel */}
-          <ResizablePanel defaultSize={diffOpen ? 55 : 100} minSize={30}>
-            {planReview ? (
-              <PlanReview
-                title={planReview.title}
-                filePath={planReview.filePath}
-                content={planReview.content}
-                theme={theme}
-                onClose={() => setPlanReview(null)}
-                onApprove={handlePlanApprove}
-                onRevise={handlePlanRevise}
-              />
-            ) : (
-              <ChatPanel
-                messages={claude.messages}
-                pendingApproval={claude.pendingApproval}
-                onApprove={(id) => claude.approveRequest(id)}
-                onDeny={(id) => claude.denyRequest(id)}
-                onSend={claude.sendMessage}
-                onAnswerQuestion={claude.answerQuestion}
-                onOpenFile={openPlanReview}
-                theme={theme}
-                disabled={claude.connectionState !== 'active'}
-                model={model}
-                onModelChange={(m) => { setModel(m); localStorage.setItem('bifrost-model', m) }}
-              />
-            )}
-          </ResizablePanel>
+        {/* Conversation tab */}
+        {activeTab === 'conversation' && (
+          <>
+            <Sidebar
+              isOpen={sidebarOpen}
+              onToggle={() => setSidebarOpen(!sidebarOpen)}
+              onNewSession={handleNewSession}
+              onResumeSession={handleResumeSession}
+              activeSessionId={null}
+              currentBranch={claude.branch}
+              pullRequest={currentPR}
+              onCreatePR={() => setShowCreatePR(true)}
+            />
+            <div className="flex-1 min-w-0">
+              {planReview ? (
+                <PlanReview
+                  title={planReview.title}
+                  filePath={planReview.filePath}
+                  content={planReview.content}
+                  theme={theme}
+                  onClose={() => setPlanReview(null)}
+                  onApprove={handlePlanApprove}
+                  onRevise={handlePlanRevise}
+                />
+              ) : (
+                <ChatPanel
+                  messages={claude.messages}
+                  pendingApproval={claude.pendingApproval}
+                  onApprove={(id) => claude.approveRequest(id)}
+                  onDeny={(id) => claude.denyRequest(id)}
+                  onSend={claude.sendMessage}
+                  onAnswerQuestion={claude.answerQuestion}
+                  onOpenFile={openPlanReview}
+                  theme={theme}
+                  disabled={claude.connectionState !== 'active'}
+                  model={model}
+                  onModelChange={(m) => { setModel(m); localStorage.setItem('bifrost-model', m) }}
+                />
+              )}
+            </div>
+          </>
+        )}
 
-          {/* Diff panel — resizable */}
-          {diffOpen && (
-            <>
-              <ResizableHandle />
-              <ResizablePanel defaultSize={45} minSize={20}>
-                <div className="h-full flex flex-col">
-                  <ReviewTabsBar
-                    reviews={reviews}
-                    activeReviewId={activeReviewId}
-                    onSelectReview={setActiveReviewId}
-                    onStartNewReview={() => {}}
-                  />
-                  <div className="flex-1 overflow-hidden">
-                    <DiffPanel files={claude.diffs} theme={theme} onSubmitReview={handleSubmitReview} />
-                  </div>
-                </div>
-              </ResizablePanel>
-            </>
-          )}
-        </ResizablePanelGroup>
+        {/* Files Changed tab */}
+        {activeTab === 'files' && (
+          <div className="flex-1 flex flex-col">
+            <ReviewTabsBar
+              reviews={reviews}
+              activeReviewId={activeReviewId}
+              onSelectReview={setActiveReviewId}
+              onStartNewReview={() => {}}
+            />
+            <div className="flex-1 overflow-hidden">
+              <DiffPanel files={claude.diffs} theme={theme} onSubmitReview={handleSubmitReview} />
+            </div>
+          </div>
+        )}
+
+        {/* Commits tab -- placeholder */}
+        {activeTab === 'commits' && (
+          <div className="flex-1 flex items-center justify-center text-muted-foreground text-[13px]">
+            Commits view coming soon
+          </div>
+        )}
+
+        {/* Reviews tab -- placeholder */}
+        {activeTab === 'reviews' && (
+          <div className="flex-1 flex items-center justify-center text-muted-foreground text-[13px]">
+            Reviews view coming soon
+          </div>
+        )}
       </div>
       {showCreatePR && (
         <CreatePRDialog
