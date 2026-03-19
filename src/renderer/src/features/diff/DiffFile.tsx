@@ -1,9 +1,19 @@
 import { useState } from 'react'
-import type { DiffFileData, InlineComment } from '../../types'
+import type { DiffFileData, InlineComment, ReviewComment } from '../../types'
 import { DiffFileHeader } from './DiffFileHeader'
 import { DiffHunkView } from './DiffHunkView'
 
-interface Props { file: DiffFileData; theme: 'light' | 'dark' }
+interface Props {
+  file: DiffFileData
+  theme: 'light' | 'dark'
+  reviewMode?: boolean
+  reviewComments?: ReviewComment[]
+  commentingLine?: number | null
+  onLineClick?: (lineNumber: number) => void
+  onAddComment?: (text: string) => void
+  onCancelComment?: () => void
+  onRemoveComment?: (id: string) => void
+}
 
 export function DiffFile({ file, theme }: Props) {
   const [collapsed, setCollapsed] = useState(false)

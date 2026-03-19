@@ -32,6 +32,23 @@ export interface Message {
   }
 }
 
+export interface ReviewComment {
+  id: string
+  filename: string
+  lineNumber: number
+  text: string
+  timestamp: number
+  resolved: boolean
+}
+
+export interface Review {
+  id: string
+  comments: ReviewComment[]
+  status: 'drafting' | 'submitted' | 'in-progress' | 'done'
+  createdAt: number
+  sessionId?: string
+}
+
 export interface DiffHunk {
   oldStart: number
   newStart: number
