@@ -447,12 +447,36 @@ function registerIpcHandlers(): void {
     if (!workingDir) return []
     try {
       const { execSync } = await import('child_process')
+
+      // Get current branch
+      const currentBranch = execSync('git rev-parse --abbrev-ref HEAD', {
+        cwd: workingDir, encoding: 'utf-8',
+      }).trim()
+
       // Get base branch
       const baseBranches = (store.get('baseBranches', {}) as Record<string, string>)
-      let base = baseBranches[workingDir] ?? 'main'
-      try { execSync(`git rev-parse --verify ${base}`, { cwd: workingDir, encoding: 'utf-8' }) } catch { base = 'main' }
+      let base = baseBranches[workingDir] ?? null
 
-      const output = execSync(`git log ${base}..HEAD --format="%H%n%s%n%an%n%ar" --reverse`, {
+      // Auto-detect base if not set
+      if (!base) {
+        for (const candidate of ['main', 'master']) {
+          try {
+            execSync(`git rev-parse --verify ${candidate}`, { cwd: workingDir, encoding: 'utf-8' })
+            base = candidate
+            break
+          } catch { /* not found */ }
+        }
+      }
+
+      // If on the base branch or no base found, show recent commits instead
+      let gitLogCmd: string
+      if (!base || currentBranch === base) {
+        gitLogCmd = `git log -30 --format="%H%n%s%n%an%n%ar"`
+      } else {
+        gitLogCmd = `git log ${base}..HEAD --format="%H%n%s%n%an%n%ar" --reverse`
+      }
+
+      const output = execSync(gitLogCmd, {
         cwd: workingDir, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024,
       }).trim()
       if (!output) return []
