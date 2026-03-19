@@ -179,6 +179,7 @@ export interface ClaudeAPI {
   archiveItem(type: 'project' | 'session', id: string): Promise<void>
   unarchiveItem(type: 'project' | 'session', id: string): Promise<void>
   getArchived(): Promise<{ projects: string[]; sessions: string[] }>
+  openExternal(url: string): Promise<void>
   getGitUser(): Promise<{ name: string; initial: string }>
   getGitStatus(): Promise<{ hasUncommitted: boolean; unpushedCount: number }>
   listBranches(): Promise<string[]>
@@ -190,7 +191,7 @@ export interface ClaudeAPI {
   getPullRequest(): Promise<PullRequest | null>
   createPullRequest(title: string, body: string, baseBranch?: string): Promise<{ success: boolean; pr?: PullRequest; error?: string }>
   loadPlanFile(filePath: string): Promise<string | null>
-  listCommits(): Promise<Array<{ sha: string; message: string; author: string; timeAgo: string }>>
+  listCommits(): Promise<Array<{ sha: string; fullSha?: string; message: string; author: string; timeAgo: string; url?: string }>>
 }
 
 declare global {

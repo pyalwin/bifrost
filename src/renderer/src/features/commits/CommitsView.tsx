@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react'
+import { ExternalLink } from 'lucide-react'
 
 interface Commit {
   sha: string
+  fullSha?: string
   message: string
   author: string
   timeAgo: string
+  url?: string
 }
 
 interface Props {
@@ -64,7 +67,18 @@ export function CommitsView({ branch }: Props) {
                 <div className="text-[11px] text-muted-foreground mt-1">{commit.author} · {commit.timeAgo}</div>
               </div>
               {/* SHA */}
-              <span className="text-[11px] font-mono text-blue-400 shrink-0 pt-0.5">{commit.sha}</span>
+              {commit.url ? (
+                <button
+                  onClick={() => window.claude?.openExternal(commit.url!)}
+                  className="text-[11px] font-mono text-blue-400 shrink-0 pt-0.5 hover:underline flex items-center gap-1 cursor-pointer"
+                  title="Open on GitHub"
+                >
+                  {commit.sha}
+                  <ExternalLink className="w-2.5 h-2.5 opacity-50" />
+                </button>
+              ) : (
+                <span className="text-[11px] font-mono text-blue-400 shrink-0 pt-0.5">{commit.sha}</span>
+              )}
             </div>
           ))}
         </div>

@@ -309,7 +309,10 @@ export function TitleBar({
                 Push
                 <span className="text-[10px] text-blue-400/70">{unpushed}</span>
                 <span className="text-muted-foreground/30 mx-0.5">·</span>
-                <span className="text-green-500 text-[11px]">PR #{pullRequest.number}</span>
+                <span
+                  className="text-green-500 text-[11px] hover:underline cursor-pointer"
+                  onClick={(e) => { e.stopPropagation(); window.claude?.openExternal(pullRequest.url) }}
+                >PR #{pullRequest.number}</span>
               </button>
             )
           }
@@ -328,16 +331,19 @@ export function TitleBar({
 
           if (pullRequest) {
             return (
-              <div className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-[11px] font-semibold",
-                pullRequest.isDraft ? "border-border text-muted-foreground" : "border-green-600/50 text-green-500"
-              )} title={pullRequest.title}>
+              <button
+                onClick={() => window.claude?.openExternal(pullRequest.url)}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-[11px] font-semibold cursor-pointer hover:opacity-80 transition-opacity",
+                  pullRequest.isDraft ? "border-border text-muted-foreground" : "border-green-600/50 text-green-500"
+                )} title={`${pullRequest.title} — Open on GitHub`}>
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 3.25a2.25 2.25 0 013 2.122v5.256a2.251 2.251 0 11-1.5 0V5.372A2.25 2.25 0 011.5 3.25zm5.677-.177L9.573.677A.25.25 0 0110 .854V2.5h1A2.5 2.5 0 0113.5 5v5.628a2.251 2.251 0 11-1.5 0V5a1 1 0 00-1-1h-1v1.646a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354z"/></svg>
                 PR #{pullRequest.number}
                 <span className={cn("px-1.5 rounded text-[10px]", pullRequest.isDraft ? "bg-muted" : "bg-green-500/15")}>
                   {pullRequest.isDraft ? 'Draft' : 'Open'}
                 </span>
-              </div>
+                <ExternalLink className="w-3 h-3 opacity-50" />
+              </button>
             )
           }
 

@@ -333,6 +333,10 @@ function registerIpcHandlers(): void {
     return baseBranches[workingDir] ?? null
   })
 
+  ipcMain.handle('claude:open-external', async (_event, url: string) => {
+    shell.openExternal(url)
+  })
+
   ipcMain.handle('claude:get-git-status', async () => {
     const workingDir = sessionManager.workingDir
     if (!workingDir) return { hasUncommitted: false, unpushedCount: 0 }
@@ -511,15 +515,28 @@ function registerIpcHandlers(): void {
       }).trim()
       if (!output) return []
 
+      // Get remote URL for commit links
+      let repoUrl = ''
+      try {
+        const remote = execSync('git remote get-url origin', { cwd: workingDir, encoding: 'utf-8' }).trim()
+        repoUrl = remote
+          .replace(/\.git$/, '')
+          .replace(/^git@github\.com:/, 'https://github.com/')
+          .replace(/^ssh:\/\/git@github\.com\//, 'https://github.com/')
+      } catch { /* no remote */ }
+
       const lines = output.split('\n')
-      const commits: Array<{ sha: string; message: string; author: string; timeAgo: string }> = []
+      const commits: Array<{ sha: string; fullSha: string; message: string; author: string; timeAgo: string; url: string }> = []
       for (let i = 0; i < lines.length; i += 4) {
         if (i + 3 < lines.length) {
+          const fullSha = lines[i]
           commits.push({
-            sha: lines[i].slice(0, 7),
+            sha: fullSha.slice(0, 7),
+            fullSha,
             message: lines[i + 1],
             author: lines[i + 2],
             timeAgo: lines[i + 3],
+            url: repoUrl ? `${repoUrl}/commit/${fullSha}` : '',
           })
         }
       }
