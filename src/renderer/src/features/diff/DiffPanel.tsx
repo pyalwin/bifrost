@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { DiffFileData, ReviewComment, Review } from '../../types'
 import { DiffSummaryHeader } from './DiffSummaryHeader'
 import { DiffFile } from './DiffFile'
@@ -10,10 +10,31 @@ interface Props {
   onSubmitReview?: (review: Review) => void
 }
 
+const BATCH_SIZE = 3
+
 export function DiffPanel({ files, theme, onSubmitReview }: Props) {
   const [reviewMode, setReviewMode] = useState(false)
   const [reviewComments, setReviewComments] = useState<ReviewComment[]>([])
   const [commentingLine, setCommentingLine] = useState<{ filename: string; lineNumber: number } | null>(null)
+  const [renderedCount, setRenderedCount] = useState(BATCH_SIZE)
+  const prevFilesRef = useRef(files)
+
+  // Reset rendered count when files change
+  useEffect(() => {
+    if (prevFilesRef.current !== files) {
+      setRenderedCount(BATCH_SIZE)
+      prevFilesRef.current = files
+    }
+  }, [files])
+
+  // Progressively render more files
+  useEffect(() => {
+    if (renderedCount >= files.length) return
+    const timer = setTimeout(() => {
+      setRenderedCount(prev => Math.min(prev + BATCH_SIZE, files.length))
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [renderedCount, files.length])
 
   const handleLineClick = (filename: string, lineNumber: number) => {
     if (!reviewMode) return
@@ -60,11 +81,12 @@ export function DiffPanel({ files, theme, onSubmitReview }: Props) {
     setCommentingLine(null)
   }
 
-  console.log('[DiffPanel] Rendering with', files.length, 'files')
   if (files.length === 0) return <DiffEmptyState />
 
   const totalAdditions = files.reduce((sum, f) => sum + f.additions, 0)
   const totalDeletions = files.reduce((sum, f) => sum + f.deletions, 0)
+  const visibleFiles = files.slice(0, renderedCount)
+  const remaining = files.length - renderedCount
 
   return (
     <div className="h-full flex flex-col">
@@ -79,7 +101,7 @@ export function DiffPanel({ files, theme, onSubmitReview }: Props) {
         onCancelReview={handleCancelReview}
       />
       <div className="flex-1 overflow-y-auto">
-        {files.map((file) => (
+        {visibleFiles.map((file) => (
           <DiffFile
             key={file.filename}
             file={file}
@@ -93,6 +115,18 @@ export function DiffPanel({ files, theme, onSubmitReview }: Props) {
             onRemoveComment={handleRemoveComment}
           />
         ))}
+        {remaining > 0 && (
+          <div className="px-4 py-3 border-b border-border">
+            <div className="flex items-center gap-3">
+              <span className="shrink-0 w-[14px] h-[14px] relative">
+                <span className="absolute inset-0 rounded-full border-[1.5px] border-muted-foreground/30 border-t-muted-foreground animate-spin" />
+              </span>
+              <span className="text-[12px] text-muted-foreground">
+                Loading {remaining} more file{remaining !== 1 ? 's' : ''}...
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
