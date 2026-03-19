@@ -183,10 +183,12 @@ export interface ClaudeAPI {
   checkoutBranch(branchName: string, createNew: boolean): Promise<{ success: boolean; error?: string }>
   setBaseBranch(branch: string | null): Promise<void>
   getBaseBranch(): Promise<string | null>
+  openInIDE(ide: 'vscode' | 'cursor' | 'pycharm'): Promise<void>
   getPRPrefill(): Promise<{ title: string; body: string }>
   getPullRequest(): Promise<PullRequest | null>
   createPullRequest(title: string, body: string, baseBranch?: string): Promise<{ success: boolean; pr?: PullRequest; error?: string }>
   loadPlanFile(filePath: string): Promise<string | null>
+  listCommits(): Promise<Array<{ sha: string; message: string; author: string; timeAgo: string }>>
 }
 
 declare global {

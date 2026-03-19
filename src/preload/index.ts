@@ -52,11 +52,13 @@ const claudeAPI = {
     ipcRenderer.invoke('claude:checkout-branch', branchName, createNew),
   setBaseBranch: (branch: string | null) => ipcRenderer.invoke('claude:set-base-branch', branch),
   getBaseBranch: () => ipcRenderer.invoke('claude:get-base-branch'),
+  openInIDE: (ide: 'vscode' | 'cursor' | 'pycharm') => ipcRenderer.invoke('claude:open-in-ide', ide),
   getPRPrefill: () => ipcRenderer.invoke('claude:get-pr-prefill'),
   getPullRequest: () => ipcRenderer.invoke('claude:get-pull-request'),
   createPullRequest: (title: string, body: string, baseBranch?: string) =>
     ipcRenderer.invoke('claude:create-pull-request', title, body, baseBranch),
   loadPlanFile: (filePath: string) => ipcRenderer.invoke('claude:load-plan-file', filePath),
+  listCommits: () => ipcRenderer.invoke('claude:list-commits'),
 }
 
 if (process.contextIsolated) {

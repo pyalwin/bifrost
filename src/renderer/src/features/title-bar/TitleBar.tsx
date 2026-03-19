@@ -43,6 +43,7 @@ export function TitleBar({
   const projectName = projectPath ? projectPath.split('/').filter(Boolean).pop() ?? '' : ''
 
   const [showBranchPicker, setShowBranchPicker] = useState(false)
+  const [showOpenMenu, setShowOpenMenu] = useState(false)
   const [showBasePicker, setShowBasePicker] = useState(false)
   const [branches, setBranches] = useState<string[]>([])
   const [baseBranch, setBaseBranch] = useState<string | null>(null)
@@ -302,16 +303,48 @@ export function TitleBar({
             </span>
           </div>
         )}
-        <button
-          disabled={openDisabled}
-          className={cn(
-            'flex items-center gap-1.5 px-4 py-1.5 border border-border rounded-lg text-[13px] font-medium bg-background transition-colors',
-            openDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-muted'
+        <div className="relative">
+          <button
+            disabled={openDisabled}
+            onClick={() => setShowOpenMenu(v => !v)}
+            className={cn(
+              'flex items-center gap-1.5 px-4 py-1.5 border border-border rounded-lg text-[13px] font-medium bg-background transition-colors',
+              openDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-muted'
+            )}
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            Open
+            <ChevronDown className="w-3 h-3 text-muted-foreground/50" />
+          </button>
+          {showOpenMenu && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowOpenMenu(false)} />
+              <div className="absolute top-full right-0 mt-2 w-48 bg-background border border-border rounded-lg shadow-lg z-50 animate-fade-in-up overflow-hidden py-1">
+                <button
+                  onClick={() => { window.claude?.openInIDE('vscode'); setShowOpenMenu(false) }}
+                  className="w-full text-left px-3 py-2 text-[13px] hover:bg-muted transition-colors flex items-center gap-2"
+                >
+                  <span className="text-[16px]">📘</span>
+                  VS Code
+                </button>
+                <button
+                  onClick={() => { window.claude?.openInIDE('cursor'); setShowOpenMenu(false) }}
+                  className="w-full text-left px-3 py-2 text-[13px] hover:bg-muted transition-colors flex items-center gap-2"
+                >
+                  <span className="text-[16px]">⚡</span>
+                  Cursor
+                </button>
+                <button
+                  onClick={() => { window.claude?.openInIDE('pycharm'); setShowOpenMenu(false) }}
+                  className="w-full text-left px-3 py-2 text-[13px] hover:bg-muted transition-colors flex items-center gap-2"
+                >
+                  <span className="text-[16px]">🐍</span>
+                  PyCharm
+                </button>
+              </div>
+            </>
           )}
-        >
-          <ExternalLink className="w-3.5 h-3.5" />
-          Open
-        </button>
+        </div>
         <button className="flex items-center gap-1.5 px-4 py-1.5 border border-border rounded-lg text-[13px] font-medium bg-background hover:bg-muted transition-colors">
           <GitCommit className="w-3.5 h-3.5" />
           Commit

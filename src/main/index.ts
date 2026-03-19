@@ -442,6 +442,53 @@ function registerIpcHandlers(): void {
     }
   })
 
+  ipcMain.handle('claude:list-commits', async () => {
+    const workingDir = sessionManager.workingDir
+    if (!workingDir) return []
+    try {
+      const { execSync } = await import('child_process')
+      // Get base branch
+      const baseBranches = (store.get('baseBranches', {}) as Record<string, string>)
+      let base = baseBranches[workingDir] ?? 'main'
+      try { execSync(`git rev-parse --verify ${base}`, { cwd: workingDir, encoding: 'utf-8' }) } catch { base = 'main' }
+
+      const output = execSync(`git log ${base}..HEAD --format="%H%n%s%n%an%n%ar" --reverse`, {
+        cwd: workingDir, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024,
+      }).trim()
+      if (!output) return []
+
+      const lines = output.split('\n')
+      const commits: Array<{ sha: string; message: string; author: string; timeAgo: string }> = []
+      for (let i = 0; i < lines.length; i += 4) {
+        if (i + 3 < lines.length) {
+          commits.push({
+            sha: lines[i].slice(0, 7),
+            message: lines[i + 1],
+            author: lines[i + 2],
+            timeAgo: lines[i + 3],
+          })
+        }
+      }
+      return commits.reverse()  // newest first
+    } catch {
+      return []
+    }
+  })
+
+  ipcMain.handle('claude:open-in-ide', async (_event, ide: 'vscode' | 'cursor' | 'pycharm') => {
+    const workingDir = sessionManager.workingDir
+    if (!workingDir) return
+    try {
+      const { exec } = await import('child_process')
+      const commands: Record<string, string> = {
+        vscode: `code "${workingDir}"`,
+        cursor: `cursor "${workingDir}" || open -a "Cursor" "${workingDir}"`,
+        pycharm: `pycharm "${workingDir}" || open -a "PyCharm" "${workingDir}"`,
+      }
+      exec(commands[ide] ?? '')
+    } catch { /* ignore */ }
+  })
+
   ipcMain.handle('claude:create-pull-request', async (_event, title: string, body: string, baseBranch?: string) => {
     const workingDir = sessionManager.workingDir
     if (!workingDir) return { success: false, error: 'No working directory' }
