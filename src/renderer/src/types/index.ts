@@ -180,6 +180,7 @@ export interface ClaudeAPI {
   unarchiveItem(type: 'project' | 'session', id: string): Promise<void>
   getArchived(): Promise<{ projects: string[]; sessions: string[] }>
   getLocalDiffs(): Promise<DiffFileData[]>
+  generateCommitMessage(): Promise<string>
   getStagedFiles(): Promise<{ staged: string[]; unstaged: string[] }>
   stageAll(): Promise<void>
   gitCommit(message: string): Promise<{ success: boolean; error?: string }>

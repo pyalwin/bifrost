@@ -364,21 +364,46 @@ function registerIpcHandlers(): void {
         if (x !== ' ' && x !== '?') staged.push(file)
         if (y !== ' ' || x === '?') unstaged.push(file)
       }
-      // Generate a suggested commit message
-      const allFiles = [...new Set([...staged, ...unstaged])]
-      const dirs = [...new Set(allFiles.map(f => f.split('/').slice(0, -1).join('/')))]
-      let suggestedMessage = ''
-      if (allFiles.length === 1) {
-        suggestedMessage = `update ${allFiles[0].split('/').pop()}`
-      } else if (dirs.length === 1 && dirs[0]) {
-        suggestedMessage = `update ${allFiles.length} files in ${dirs[0]}`
-      } else {
-        suggestedMessage = `update ${allFiles.length} files`
-      }
-
-      return { staged, unstaged, suggestedMessage }
+      return { staged, unstaged }
     } catch {
-      return { staged: [], unstaged: [], suggestedMessage: '' }
+      return { staged: [], unstaged: [] }
+    }
+  })
+
+  ipcMain.handle('claude:generate-commit-message', async () => {
+    const workingDir = sessionManager.workingDir
+    if (!workingDir) return ''
+    try {
+      const { execSync } = await import('child_process')
+      // Get a compact diff summary
+      const diffStat = execSync('git diff --stat HEAD', { cwd: workingDir, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 }).trim()
+      const diffContent = execSync('git diff HEAD', { cwd: workingDir, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 }).trim()
+
+      // Truncate diff to ~4000 chars to keep the prompt small
+      const truncatedDiff = diffContent.length > 4000
+        ? diffContent.slice(0, 4000) + '\n... (truncated)'
+        : diffContent
+
+      if (!diffStat && !truncatedDiff) return ''
+
+      // Use claude CLI in print mode for a one-shot commit message generation
+      const prompt = `Generate a concise git commit message (1-2 lines, conventional commits format like "feat:", "fix:", "refactor:") for these changes. Return ONLY the commit message, nothing else.\n\nFiles changed:\n${diffStat}\n\nDiff:\n${truncatedDiff}`
+
+      const { discoverCLI } = await import('./cli-discovery')
+      const cli = discoverCLI()
+
+      const env = { ...process.env }
+      delete env.CLAUDECODE
+
+      const result = execSync(
+        `${cli.path} --print --output-format text --model haiku "${prompt.replace(/"/g, '\\"')}"`,
+        { cwd: workingDir, encoding: 'utf-8', timeout: 30000, env, maxBuffer: 10 * 1024 * 1024 }
+      ).trim()
+
+      // Clean up — remove quotes, backticks, or extra formatting
+      return result.replace(/^["'`]+|["'`]+$/g, '').trim()
+    } catch {
+      return ''
     }
   })
 

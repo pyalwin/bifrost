@@ -49,6 +49,7 @@ const claudeAPI = {
   getArchived: () => ipcRenderer.invoke('claude:get-archived'),
   getLocalDiffs: () => ipcRenderer.invoke('claude:get-local-diffs'),
   getStagedFiles: () => ipcRenderer.invoke('claude:get-staged-files'),
+  generateCommitMessage: () => ipcRenderer.invoke('claude:generate-commit-message'),
   stageAll: () => ipcRenderer.invoke('claude:stage-all'),
   gitCommit: (message: string) => ipcRenderer.invoke('claude:git-commit', message),
   openExternal: (url: string) => ipcRenderer.invoke('claude:open-external', url),

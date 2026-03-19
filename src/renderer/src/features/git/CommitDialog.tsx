@@ -11,6 +11,7 @@ export function CommitDialog({ onClose, onCommitted }: Props) {
   const [staged, setStaged] = useState<string[]>([])
   const [unstaged, setUnstaged] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
+  const [generatingMsg, setGeneratingMsg] = useState(false)
   const [committing, setCommitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -23,12 +24,20 @@ export function CommitDialog({ onClose, onCommitted }: Props) {
       .then((result) => {
         setStaged(result.staged)
         setUnstaged(result.unstaged)
-        if (result.suggestedMessage && !message) {
-          setMessage(result.suggestedMessage)
-        }
       })
       .catch(() => {})
       .finally(() => setLoading(false))
+
+    // Generate commit message via Claude in parallel
+    setGeneratingMsg(true)
+    if (typeof window.claude?.generateCommitMessage === 'function') {
+      window.claude.generateCommitMessage()
+        .then(msg => { if (msg) setMessage(msg) })
+        .catch(() => {})
+        .finally(() => setGeneratingMsg(false))
+    } else {
+      setGeneratingMsg(false)
+    }
   }, [])
 
   const handleStageAll = async () => {
@@ -96,7 +105,7 @@ export function CommitDialog({ onClose, onCommitted }: Props) {
               }}
               className="w-full px-3 py-2 text-[13px] bg-muted border border-border rounded-md outline-none focus:border-foreground/30 resize-none font-mono"
               rows={3}
-              placeholder="Describe your changes..."
+              placeholder={generatingMsg ? "Generating commit message..." : "Describe your changes..."}
               autoFocus
             />
           </div>
