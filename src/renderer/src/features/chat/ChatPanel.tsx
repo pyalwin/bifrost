@@ -45,7 +45,7 @@ export function ChatPanel({
         />
       )}
       <MessageList messages={messages} theme={theme} onSend={onSend} onAnswerQuestion={onAnswerQuestion} onOpenFile={onOpenFile} hasSession={hasSession} onNewSession={onNewSession} />
-      <InputBox onSend={onSend} disabled={disabled} model={model} onModelChange={onModelChange} />
+      {hasSession && <InputBox onSend={onSend} disabled={disabled} model={model} onModelChange={onModelChange} />}
     </div>
   )
 }
