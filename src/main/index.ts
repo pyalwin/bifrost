@@ -5,7 +5,7 @@ import Store from 'electron-store'
 import { WsBridge } from './ws-bridge'
 import { SessionManager } from './session-manager'
 import { GitWatcher } from './git-watcher'
-import { discoverSessions, discoverAllSessions, discoverProjects } from './session-discovery'
+import { discoverSessions, discoverAllSessions, discoverProjects, discoverSessionsGrouped } from './session-discovery'
 import { loadSessionHistory } from './session-history'
 
 const store = new Store()
@@ -114,6 +114,16 @@ function registerIpcHandlers(): void {
       }
       // Keep only the 20 most recent
       store.set('sessions', sessions.slice(0, 20))
+
+      // Store branch association
+      try {
+        const branch = require('child_process').execSync('git rev-parse --abbrev-ref HEAD', {
+          cwd: workingDir, encoding: 'utf-8'
+        }).trim()
+        const sessionBranches = (store.get('sessionBranches', {}) as Record<string, string>)
+        sessionBranches[sessionId] = branch
+        store.set('sessionBranches', sessionBranches)
+      } catch { /* not a git repo */ }
     }
   })
 
@@ -146,6 +156,16 @@ function registerIpcHandlers(): void {
         sessions.unshift(entry)
       }
       store.set('sessions', sessions.slice(0, 20))
+
+      // Store branch association
+      try {
+        const branch = require('child_process').execSync('git rev-parse --abbrev-ref HEAD', {
+          cwd: workingDir, encoding: 'utf-8'
+        }).trim()
+        const sessionBranches = (store.get('sessionBranches', {}) as Record<string, string>)
+        sessionBranches[sessionId] = branch
+        store.set('sessionBranches', sessionBranches)
+      } catch { /* not a git repo */ }
     }
   )
 
@@ -174,6 +194,12 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('claude:list-projects', async () => {
     return discoverProjects()
+  })
+
+  ipcMain.handle('claude:list-sessions-grouped', async () => {
+    const sessionBranches = (store.get('sessionBranches', {}) as Record<string, string>)
+    const baseBranches = (store.get('baseBranches', {}) as Record<string, string>)
+    return discoverSessionsGrouped(sessionBranches, baseBranches)
   })
 
   ipcMain.handle('claude:select-directory', async () => {

@@ -268,3 +268,53 @@ export function discoverAllSessions(): DiscoveredSession[] {
   allSessions.sort((a, b) => b.timestamp - a.timestamp)
   return allSessions.slice(0, 20)
 }
+
+export function discoverSessionsGrouped(
+  sessionBranches: Record<string, string>,
+  baseBranches: Record<string, string>
+): { name: string; workingDir: string; branches: { name: string; baseBranch: string | null; sessions: DiscoveredSession[]; latestTimestamp: number }[]; latestTimestamp: number }[] {
+  const allSessions = discoverAllSessions()
+
+  const projectMap = new Map<string, Map<string, DiscoveredSession[]>>()
+
+  for (const session of allSessions) {
+    const branch = sessionBranches[session.id] ?? 'main'
+    if (!projectMap.has(session.workingDir)) {
+      projectMap.set(session.workingDir, new Map())
+    }
+    const branchMap = projectMap.get(session.workingDir)!
+    if (!branchMap.has(branch)) {
+      branchMap.set(branch, [])
+    }
+    branchMap.get(branch)!.push(session)
+  }
+
+  const projects: ReturnType<typeof discoverSessionsGrouped> = []
+
+  for (const [workingDir, branchMap] of projectMap) {
+    const parts = workingDir.split('/').filter(Boolean)
+    const name = parts.pop() ?? workingDir
+    const branches: { name: string; baseBranch: string | null; sessions: DiscoveredSession[]; latestTimestamp: number }[] = []
+
+    for (const [branchName, sessions] of branchMap) {
+      sessions.sort((a, b) => b.timestamp - a.timestamp)
+      branches.push({
+        name: branchName,
+        baseBranch: baseBranches[workingDir] ?? null,
+        sessions,
+        latestTimestamp: sessions[0]?.timestamp ?? 0,
+      })
+    }
+
+    branches.sort((a, b) => b.latestTimestamp - a.latestTimestamp)
+    projects.push({
+      name,
+      workingDir,
+      branches,
+      latestTimestamp: branches[0]?.latestTimestamp ?? 0,
+    })
+  }
+
+  projects.sort((a, b) => b.latestTimestamp - a.latestTimestamp)
+  return projects
+}

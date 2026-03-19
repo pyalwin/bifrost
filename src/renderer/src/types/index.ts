@@ -82,6 +82,20 @@ export interface SessionInfo {
   timestamp: number
 }
 
+export interface BranchGroup {
+  name: string
+  baseBranch: string | null
+  sessions: SessionInfo[]
+  latestTimestamp: number
+}
+
+export interface ProjectHierarchy {
+  name: string
+  workingDir: string
+  branches: BranchGroup[]
+  latestTimestamp: number
+}
+
 export type ContentBlock =
   | { type: 'text'; text: string }
   | { type: 'thinking'; thinking: string }
@@ -115,6 +129,7 @@ export interface ClaudeAPI {
   startSession(workingDir: string): Promise<void>
   resumeSession(sessionId: string, workingDir: string): Promise<void>
   listSessions(): Promise<SessionInfo[]>
+  listSessionsGrouped(): Promise<ProjectHierarchy[]>
   cancelTurn(): Promise<void>
   sendMessage(text: string, images?: ImageAttachment[]): Promise<void>
   selectImages(): Promise<ImageAttachment[]>

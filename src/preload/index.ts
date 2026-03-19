@@ -6,6 +6,7 @@ const claudeAPI = {
   resumeSession: (sessionId: string, workingDir: string, model?: string) =>
     ipcRenderer.invoke('claude:resume-session', sessionId, workingDir, model),
   listSessions: () => ipcRenderer.invoke('claude:list-sessions'),
+  listSessionsGrouped: () => ipcRenderer.invoke('claude:list-sessions-grouped'),
   listSessionsForDir: (workingDir: string) => ipcRenderer.invoke('claude:list-sessions-for-dir', workingDir),
   listProjects: () => ipcRenderer.invoke('claude:list-projects'),
   cancelTurn: () => ipcRenderer.invoke('claude:cancel-turn'),
