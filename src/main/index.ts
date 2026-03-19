@@ -424,6 +424,15 @@ function registerIpcHandlers(): void {
     }
   })
 
+  ipcMain.handle('claude:load-plan-file', async (_event, filePath: string) => {
+    try {
+      const { readFileSync } = await import('fs')
+      return readFileSync(filePath, 'utf-8')
+    } catch {
+      return null
+    }
+  })
+
   ipcMain.handle('claude:create-pull-request', async (_event, title: string, body: string, baseBranch?: string) => {
     const workingDir = sessionManager.workingDir
     if (!workingDir) return { success: false, error: 'No working directory' }

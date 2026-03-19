@@ -41,6 +41,13 @@ export interface ReviewComment {
   resolved: boolean
 }
 
+export interface PlanComment {
+  id: string
+  blockIndex: number
+  text: string
+  timestamp: number
+}
+
 export interface Review {
   id: string
   comments: ReviewComment[]
@@ -179,6 +186,7 @@ export interface ClaudeAPI {
   getPRPrefill(): Promise<{ title: string; body: string }>
   getPullRequest(): Promise<PullRequest | null>
   createPullRequest(title: string, body: string, baseBranch?: string): Promise<{ success: boolean; pr?: PullRequest; error?: string }>
+  loadPlanFile(filePath: string): Promise<string | null>
 }
 
 declare global {

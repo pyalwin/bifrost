@@ -56,6 +56,7 @@ const claudeAPI = {
   getPullRequest: () => ipcRenderer.invoke('claude:get-pull-request'),
   createPullRequest: (title: string, body: string, baseBranch?: string) =>
     ipcRenderer.invoke('claude:create-pull-request', title, body, baseBranch),
+  loadPlanFile: (filePath: string) => ipcRenderer.invoke('claude:load-plan-file', filePath),
 }
 
 if (process.contextIsolated) {
