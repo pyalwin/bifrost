@@ -10,6 +10,8 @@ import { MainTabBar, type TabId } from './features/tabs/MainTabBar'
 import type { Review, PullRequest, PlanComment } from './types/index'
 import { CreatePRDialog } from './features/pr/CreatePRDialog'
 import { PlanReview } from './features/plan/PlanReview'
+import { CommitsView } from './features/commits/CommitsView'
+import { ReviewsView } from './features/reviews/ReviewsView'
 
 export default function App() {
   const { theme, toggleTheme } = useTheme()
@@ -242,18 +244,18 @@ export default function App() {
           </div>
         )}
 
-        {/* Commits tab -- placeholder */}
+        {/* Commits tab */}
         {activeTab === 'commits' && (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground text-[13px]">
-            Commits view coming soon
-          </div>
+          <CommitsView branch={claude.branch || ''} />
         )}
 
-        {/* Reviews tab -- placeholder */}
+        {/* Reviews tab */}
         {activeTab === 'reviews' && (
-          <div className="flex-1 flex items-center justify-center text-muted-foreground text-[13px]">
-            Reviews view coming soon
-          </div>
+          <ReviewsView
+            reviews={reviews}
+            onStartNewReview={() => setActiveTab('files')}
+            onSelectReview={(id) => { setActiveReviewId(id); setActiveTab('files') }}
+          />
         )}
       </div>
       {showCreatePR && (
