@@ -65,7 +65,11 @@ export function DiffFile({ file, theme, reviewMode, reviewComments, commentingLi
         collapsed={collapsed}
         viewed={viewed}
         onToggleCollapse={() => setCollapsed(!collapsed)}
-        onToggleViewed={() => setViewed(!viewed)}
+        onToggleViewed={() => {
+          const next = !viewed
+          setViewed(next)
+          if (next) setCollapsed(true)
+        }}
       />
       {!collapsed && (
         <DiffHunkView
