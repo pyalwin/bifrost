@@ -132,9 +132,11 @@ export function useClaude(): UseClaudeReturn {
                   target = cmd.length > 40 ? cmd.slice(0, 40) + '...' : cmd
                 } else if (typeof b.input.pattern === 'string') {
                   target = b.input.pattern as string
+                } else if (typeof b.input.description === 'string') {
+                  target = b.input.description as string
                 }
               }
-              return { action: b.name, target, status: 'pending' as const }
+              return { action: b.name, target, status: 'pending' as const, toolUseId: b.id }
             })
 
             updateCurrentMessage(m => ({
@@ -184,26 +186,37 @@ export function useClaude(): UseClaudeReturn {
             if ('file_path' in event.input) {
               target = String(event.input.file_path).split('/').pop() ?? event.tool_name
             } else if ('command' in event.input) {
-              // For Bash, show the command
               const cmd = String(event.input.command)
               target = cmd.length > 40 ? cmd.slice(0, 40) + '...' : cmd
             } else if ('pattern' in event.input) {
               target = String(event.input.pattern)
+            } else if ('description' in event.input) {
+              target = String(event.input.description)
             }
           }
 
-          const newTool: ToolUsage = {
-            action: toolAction,
-            target,
-            status: event.is_error ? 'error' : 'success',
-          }
-
-          // Add tool to current message
-          updateCurrentMessage(m => ({
-            ...m,
-            tools: [...(m.tools ?? []), newTool],
-            isThinking: false,
-          }))
+          updateCurrentMessage(m => {
+            const tools = [...(m.tools ?? [])]
+            const pendingIdx = tools.findIndex(t => t.status === 'pending' && t.action === toolAction)
+            if (pendingIdx >= 0) {
+              const existing = tools[pendingIdx]
+              tools[pendingIdx] = {
+                ...existing,
+                target: existing.target !== existing.action ? existing.target : target,
+                status: event.is_error ? 'error' : 'success',
+                children: existing.children?.map(c =>
+                  c.status === 'pending' ? { ...c, status: 'success' as const } : c
+                ),
+              }
+            } else {
+              tools.push({
+                action: toolAction,
+                target,
+                status: event.is_error ? 'error' : 'success',
+              })
+            }
+            return { ...m, tools, isThinking: false }
+          })
           break
         }
 
@@ -259,6 +272,66 @@ export function useClaude(): UseClaudeReturn {
           break
 
         default: {
+          // Handle progress events with agent child tools
+          const rawEvent = event as any
+          if (rawEvent.type === 'progress') {
+            const progressData = rawEvent.data
+            if (progressData?.type !== 'agent_progress') break
+
+            const parentToolUseID = rawEvent.parentToolUseID as string | undefined
+            if (!parentToolUseID) break
+
+            const innerMsg = progressData.message
+            if (innerMsg?.type !== 'assistant') break
+
+            const innerContent = innerMsg.message?.content
+            if (!Array.isArray(innerContent)) break
+
+            const childTools: ToolUsage[] = []
+            for (const block of innerContent) {
+              if (block.type === 'tool_use' && typeof block.name === 'string') {
+                let childTarget = block.name
+                const input = block.input as Record<string, unknown> | undefined
+                if (input) {
+                  if (typeof input.file_path === 'string') {
+                    childTarget = String(input.file_path).split('/').pop() ?? block.name
+                  } else if (typeof input.command === 'string') {
+                    const cmd = input.command as string
+                    childTarget = cmd.length > 40 ? cmd.slice(0, 40) + '...' : cmd
+                  } else if (typeof input.pattern === 'string') {
+                    childTarget = input.pattern as string
+                  } else if (typeof input.description === 'string') {
+                    childTarget = input.description as string
+                  }
+                }
+                childTools.push({
+                  action: block.name,
+                  target: childTarget,
+                  status: 'pending' as const,
+                  toolUseId: block.id,
+                })
+              }
+            }
+
+            if (childTools.length === 0) break
+
+            if (!isInTurn.current) startTurn()
+
+            updateCurrentMessage(m => {
+              const tools = (m.tools ?? []).map(t => {
+                if (t.toolUseId === parentToolUseID) {
+                  const existingIds = new Set((t.children ?? []).map(c => c.toolUseId))
+                  const newChildren = childTools.filter(c => !existingIds.has(c.toolUseId))
+                  if (newChildren.length === 0) return t
+                  return { ...t, children: [...(t.children ?? []), ...newChildren] }
+                }
+                return t
+              })
+              return { ...m, tools }
+            })
+            break
+          }
+
           // Unknown event — log but don't break anything
           console.log('[useClaude] unhandled event type:', (event as any).type)
           break

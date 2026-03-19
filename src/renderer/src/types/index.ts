@@ -5,6 +5,8 @@ export interface ToolUsage {
   action: string
   target: string
   status: ToolStatus
+  toolUseId?: string
+  children?: ToolUsage[]
 }
 
 export interface Message {
