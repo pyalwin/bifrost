@@ -246,6 +246,8 @@ export default function App() {
                     theme={theme}
                     disabled={claude.connectionState !== 'active'}
                     model={model}
+                    hasSession={!!claude.projectPath}
+                    onNewSession={handleNewSession}
                     onModelChange={(m) => { setModel(m); localStorage.setItem('bifrost-model', m) }}
                   />
                 )}

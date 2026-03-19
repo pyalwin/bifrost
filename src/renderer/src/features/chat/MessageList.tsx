@@ -10,12 +10,14 @@ interface Props {
   onSend?: (text: string, images?: Array<{ base64: string; mediaType: string; name: string }>) => void
   onAnswerQuestion?: (toolUseId: string, answer: string) => void
   onOpenFile?: (filePath: string) => void
+  hasSession?: boolean
+  onNewSession?: () => void
 }
 
-export function MessageList({ messages, theme, onSend, onAnswerQuestion, onOpenFile }: Props) {
+export function MessageList({ messages, theme, onSend, onAnswerQuestion, onOpenFile, hasSession, onNewSession }: Props) {
   const { ref, onScroll } = useAutoScroll<HTMLDivElement>([messages.length])
 
-  if (messages.length === 0) return <ChatEmptyState onSuggestionClick={onSend} />
+  if (messages.length === 0) return <ChatEmptyState onSuggestionClick={onSend} hasSession={hasSession} onNewSession={onNewSession} />
 
   return (
     <div ref={ref} onScroll={onScroll} className="flex-1 overflow-y-auto px-6 py-5">

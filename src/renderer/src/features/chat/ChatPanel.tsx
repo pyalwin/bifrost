@@ -15,6 +15,8 @@ interface Props {
   disabled: boolean
   model: string
   onModelChange: (model: string) => void
+  hasSession?: boolean
+  onNewSession?: () => void
 }
 
 export function ChatPanel({
@@ -29,6 +31,8 @@ export function ChatPanel({
   disabled,
   model,
   onModelChange,
+  hasSession,
+  onNewSession,
 }: Props) {
   return (
     <div className="h-full flex flex-col">
@@ -40,7 +44,7 @@ export function ChatPanel({
           onDeny={() => onDeny(pendingApproval.id)}
         />
       )}
-      <MessageList messages={messages} theme={theme} onSend={onSend} onAnswerQuestion={onAnswerQuestion} onOpenFile={onOpenFile} />
+      <MessageList messages={messages} theme={theme} onSend={onSend} onAnswerQuestion={onAnswerQuestion} onOpenFile={onOpenFile} hasSession={hasSession} onNewSession={onNewSession} />
       <InputBox onSend={onSend} disabled={disabled} model={model} onModelChange={onModelChange} />
     </div>
   )
