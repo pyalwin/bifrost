@@ -7,6 +7,7 @@ import { ChatPanel } from './features/chat/ChatPanel'
 import { DiffPanel } from './features/diff/DiffPanel'
 import { ReviewTabsBar } from './features/diff/ReviewTabsBar'
 import { cn } from './lib/utils'
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from './components/ui/resizable'
 import type { Review, PullRequest } from './types/index'
 import { CreatePRDialog } from './features/pr/CreatePRDialog'
 
@@ -158,40 +159,43 @@ export default function App() {
           pullRequest={currentPR}
           onCreatePR={() => setShowCreatePR(true)}
         />
-        {/* Chat — takes remaining space */}
-        <div className="flex-1 min-w-0">
-          <ChatPanel
-            messages={claude.messages}
-            pendingApproval={claude.pendingApproval}
-            onApprove={(id) => claude.approveRequest(id)}
-            onDeny={(id) => claude.denyRequest(id)}
-            onSend={claude.sendMessage}
-            onAnswerQuestion={claude.answerQuestion}
-            theme={theme}
-            disabled={claude.connectionState !== 'active'}
-            model={model}
-            onModelChange={(m) => { setModel(m); localStorage.setItem('bifrost-model', m) }}
-          />
-        </div>
-        {/* Diff — collapsible from right */}
-        <div className={cn(
-          "border-l border-border transition-all duration-300 overflow-hidden flex flex-col",
-          diffOpen ? "w-[45%]" : "w-0"
-        )}>
+        <ResizablePanelGroup direction="horizontal">
+          {/* Chat panel */}
+          <ResizablePanel defaultSize={diffOpen ? 55 : 100} minSize={30}>
+            <ChatPanel
+              messages={claude.messages}
+              pendingApproval={claude.pendingApproval}
+              onApprove={(id) => claude.approveRequest(id)}
+              onDeny={(id) => claude.denyRequest(id)}
+              onSend={claude.sendMessage}
+              onAnswerQuestion={claude.answerQuestion}
+              theme={theme}
+              disabled={claude.connectionState !== 'active'}
+              model={model}
+              onModelChange={(m) => { setModel(m); localStorage.setItem('bifrost-model', m) }}
+            />
+          </ResizablePanel>
+
+          {/* Diff panel — resizable */}
           {diffOpen && (
             <>
-              <ReviewTabsBar
-                reviews={reviews}
-                activeReviewId={activeReviewId}
-                onSelectReview={setActiveReviewId}
-                onStartNewReview={() => {}}
-              />
-              <div className="flex-1 overflow-hidden">
-                <DiffPanel files={claude.diffs} theme={theme} onSubmitReview={handleSubmitReview} />
-              </div>
+              <ResizableHandle />
+              <ResizablePanel defaultSize={45} minSize={20}>
+                <div className="h-full flex flex-col">
+                  <ReviewTabsBar
+                    reviews={reviews}
+                    activeReviewId={activeReviewId}
+                    onSelectReview={setActiveReviewId}
+                    onStartNewReview={() => {}}
+                  />
+                  <div className="flex-1 overflow-hidden">
+                    <DiffPanel files={claude.diffs} theme={theme} onSubmitReview={handleSubmitReview} />
+                  </div>
+                </div>
+              </ResizablePanel>
             </>
           )}
-        </div>
+        </ResizablePanelGroup>
       </div>
       {showCreatePR && (
         <CreatePRDialog
