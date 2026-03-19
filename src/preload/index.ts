@@ -6,10 +6,13 @@ const claudeAPI = {
   resumeSession: (sessionId: string, workingDir: string, model?: string) =>
     ipcRenderer.invoke('claude:resume-session', sessionId, workingDir, model),
   listSessions: () => ipcRenderer.invoke('claude:list-sessions'),
+  listSessionsGrouped: () => ipcRenderer.invoke('claude:list-sessions-grouped'),
   listSessionsForDir: (workingDir: string) => ipcRenderer.invoke('claude:list-sessions-for-dir', workingDir),
   listProjects: () => ipcRenderer.invoke('claude:list-projects'),
   cancelTurn: () => ipcRenderer.invoke('claude:cancel-turn'),
-  sendMessage: (text: string) => ipcRenderer.invoke('claude:send-message', text),
+  sendMessage: (text: string, images?: Array<{ base64: string; mediaType: string; name: string }>) =>
+    ipcRenderer.invoke('claude:send-message', text, images),
+  selectImages: () => ipcRenderer.invoke('claude:select-images'),
   sendControlResponse: (requestId: string, approved: boolean) =>
     ipcRenderer.invoke('claude:control-response', requestId, approved),
 
@@ -38,7 +41,34 @@ const claudeAPI = {
     ipcRenderer.on('claude:history', handler)
     return () => ipcRenderer.removeListener('claude:history', handler)
   },
-  selectDirectory: () => ipcRenderer.invoke('claude:select-directory')
+  selectDirectory: () => ipcRenderer.invoke('claude:select-directory'),
+  archiveItem: (type: 'project' | 'session', id: string) =>
+    ipcRenderer.invoke('claude:archive-item', type, id),
+  unarchiveItem: (type: 'project' | 'session', id: string) =>
+    ipcRenderer.invoke('claude:unarchive-item', type, id),
+  getArchived: () => ipcRenderer.invoke('claude:get-archived'),
+  saveReviews: (data: { reviews: unknown[]; comments: unknown[] }) => ipcRenderer.invoke('claude:save-reviews', data),
+  loadReviews: () => ipcRenderer.invoke('claude:load-reviews'),
+  getLocalDiffs: () => ipcRenderer.invoke('claude:get-local-diffs'),
+  getStagedFiles: () => ipcRenderer.invoke('claude:get-staged-files'),
+  generateCommitMessage: () => ipcRenderer.invoke('claude:generate-commit-message'),
+  stageAll: () => ipcRenderer.invoke('claude:stage-all'),
+  gitCommit: (message: string) => ipcRenderer.invoke('claude:git-commit', message),
+  openExternal: (url: string) => ipcRenderer.invoke('claude:open-external', url),
+  getGitUser: () => ipcRenderer.invoke('claude:get-git-user'),
+  getGitStatus: () => ipcRenderer.invoke('claude:get-git-status'),
+  listBranches: () => ipcRenderer.invoke('claude:list-branches'),
+  checkoutBranch: (branchName: string, createNew: boolean) =>
+    ipcRenderer.invoke('claude:checkout-branch', branchName, createNew),
+  setBaseBranch: (branch: string | null) => ipcRenderer.invoke('claude:set-base-branch', branch),
+  getBaseBranch: () => ipcRenderer.invoke('claude:get-base-branch'),
+  openInIDE: (ide: 'vscode' | 'cursor' | 'pycharm') => ipcRenderer.invoke('claude:open-in-ide', ide),
+  getPRPrefill: () => ipcRenderer.invoke('claude:get-pr-prefill'),
+  getPullRequest: () => ipcRenderer.invoke('claude:get-pull-request'),
+  createPullRequest: (title: string, body: string, baseBranch?: string) =>
+    ipcRenderer.invoke('claude:create-pull-request', title, body, baseBranch),
+  loadPlanFile: (filePath: string) => ipcRenderer.invoke('claude:load-plan-file', filePath),
+  listCommits: () => ipcRenderer.invoke('claude:list-commits'),
 }
 
 if (process.contextIsolated) {

@@ -105,7 +105,7 @@ export class SessionManager extends EventEmitter {
     await this.spawnCLI(workingDir, model, sessionId)
   }
 
-  async sendMessage(text: string): Promise<void> {
+  async sendMessage(text: string, images?: Array<{ base64: string; mediaType: string }>): Promise<void> {
     // In --print mode, the CLI exits after each turn.
     // If process is dead, re-spawn with --resume before sending.
     if (!this.process && this._sessionId && this._workingDir) {
@@ -113,9 +113,20 @@ export class SessionManager extends EventEmitter {
       await this.spawnCLI(this._workingDir, this._model, this._sessionId)
     }
 
+    let content: unknown = text
+    if (images && images.length > 0) {
+      content = [
+        { type: 'text', text },
+        ...images.map(img => ({
+          type: 'image',
+          source: { type: 'base64', media_type: img.mediaType, data: img.base64 },
+        })),
+      ]
+    }
+
     this.bridge.sendToClient({
       type: 'user',
-      message: { role: 'user', content: text },
+      message: { role: 'user', content },
       parent_tool_use_id: null,
       session_id: this._sessionId
     })

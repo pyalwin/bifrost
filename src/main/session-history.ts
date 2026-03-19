@@ -6,7 +6,7 @@ interface HistoryMessage {
   id: string
   role: 'user' | 'assistant'
   content: string
-  tools?: { action: string; target: string; status: 'success' | 'error' }[]
+  tools?: { action: string; target: string; status: 'success' | 'error'; toolUseId?: string; children?: HistoryMessage['tools'] }[]
 }
 
 /**
@@ -56,9 +56,11 @@ function extractTools(content: unknown): HistoryMessage['tools'] {
             target = cmd.length > 40 ? cmd.slice(0, 40) + '...' : cmd
           } else if (typeof input.pattern === 'string') {
             target = input.pattern as string
+          } else if (typeof input.description === 'string') {
+            target = input.description as string
           }
         }
-        tools.push({ action: b.name, target, status: 'success' })
+        tools.push({ action: b.name, target, status: 'success', toolUseId: b.id as string | undefined })
       }
     }
   }
@@ -159,6 +161,44 @@ export function loadSessionHistory(sessionId: string, workingDir: string): Histo
         tools,
       })
       lastAssistantIdx = messages.length - 1
+    }
+  }
+
+  // Second pass: attach agent children from progress events
+  for (const line of lines) {
+    if (!line.trim()) continue
+    let d: Record<string, unknown>
+    try { d = JSON.parse(line) } catch { continue }
+    if (d.type !== 'progress') continue
+
+    const data = d.data as Record<string, unknown> | undefined
+    if (!data || data.type !== 'agent_progress') continue
+
+    const parentToolUseID = d.parentToolUseID as string | undefined
+    if (!parentToolUseID) continue
+
+    const innerMsg = data.message as Record<string, unknown> | undefined
+    if (!innerMsg || innerMsg.type !== 'assistant') continue
+
+    const innerContent = (innerMsg.message as Record<string, unknown> | undefined)?.content
+    if (!Array.isArray(innerContent)) continue
+
+    const childTools = extractTools(innerContent)
+    if (!childTools) continue
+
+    // Find parent tool across all messages and attach children
+    for (const msg of messages) {
+      if (!msg.tools) continue
+      for (const tool of msg.tools) {
+        if (tool.toolUseId === parentToolUseID) {
+          // Deduplicate by toolUseId
+          const existingIds = new Set((tool.children ?? []).map(c => c.toolUseId))
+          const newChildren = childTools.filter(c => !existingIds.has(c.toolUseId))
+          if (newChildren.length > 0) {
+            tool.children = [...(tool.children ?? []), ...newChildren]
+          }
+        }
+      }
     }
   }
 

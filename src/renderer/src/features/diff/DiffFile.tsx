@@ -1,12 +1,26 @@
 import { useState } from 'react'
-import type { DiffFileData, InlineComment } from '../../types'
+import type { DiffFileData, InlineComment, ReviewComment } from '../../types'
+import { useGitUser } from '../../hooks/use-git-user'
 import { DiffFileHeader } from './DiffFileHeader'
 import { DiffHunkView } from './DiffHunkView'
 
-interface Props { file: DiffFileData; theme: 'light' | 'dark' }
+interface Props {
+  file: DiffFileData
+  theme: 'light' | 'dark'
+  reviewMode?: boolean
+  reviewComments?: ReviewComment[]
+  commentingLine?: number | null
+  onLineClick?: (lineNumber: number) => void
+  onAddComment?: (text: string) => void
+  onCancelComment?: () => void
+  onRemoveComment?: (id: string) => void
+  onResolveReviewComment?: (id: string) => void
+}
 
-export function DiffFile({ file, theme }: Props) {
+export function DiffFile({ file, theme, reviewMode, reviewComments, commentingLine, onLineClick, onAddComment, onCancelComment, onRemoveComment, onResolveReviewComment }: Props) {
   const [collapsed, setCollapsed] = useState(false)
+  const [viewed, setViewed] = useState(false)
+  const gitUser = useGitUser()
   const [comments, setComments] = useState<InlineComment[]>(file.comments)
 
   const commentsByLine = new Map<number, InlineComment[]>()
@@ -32,7 +46,7 @@ export function DiffFile({ file, theme }: Props) {
                 {
                   id: `${parentId}-r${c.replies.length + 1}`,
                   lineNumber: c.lineNumber,
-                  author: 'You',
+                  author: gitUser.name,
                   text,
                   timestamp: 'just now',
                   resolved: false,
@@ -52,9 +66,13 @@ export function DiffFile({ file, theme }: Props) {
         additions={file.additions}
         deletions={file.deletions}
         collapsed={collapsed}
+        viewed={viewed}
         onToggleCollapse={() => setCollapsed(!collapsed)}
-        onAccept={() => console.log('accept', file.filename)}
-        onReject={() => console.log('reject', file.filename)}
+        onToggleViewed={() => {
+          const next = !viewed
+          setViewed(next)
+          if (next) setCollapsed(true)
+        }}
       />
       {!collapsed && (
         <DiffHunkView
@@ -64,7 +82,13 @@ export function DiffFile({ file, theme }: Props) {
           commentsByLine={commentsByLine}
           onResolve={handleResolve}
           onReply={handleReply}
-          onLineClick={(ln) => console.log('new comment on line', ln)}
+          onLineClick={reviewMode ? onLineClick : undefined}
+          reviewComments={reviewComments}
+          commentingLine={commentingLine}
+          onAddComment={onAddComment}
+          onCancelComment={onCancelComment}
+          onRemoveComment={onRemoveComment}
+          onResolveReviewComment={onResolveReviewComment}
         />
       )}
     </div>

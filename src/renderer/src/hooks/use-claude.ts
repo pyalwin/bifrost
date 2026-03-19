@@ -9,8 +9,9 @@ interface UseClaudeReturn {
   projectPath: string
   pendingApproval: { id: string; toolName: string; input: Record<string, unknown> } | null
   startSession: (workingDir: string) => Promise<void>
+  startReviewSession: (workingDir: string, reviewMessage: string) => Promise<void>
   resumeSession: (sessionId: string, workingDir: string) => Promise<void>
-  sendMessage: (text: string) => void
+  sendMessage: (text: string, images?: Array<{ base64: string; mediaType: string; name: string }>) => void
   answerQuestion: (toolUseId: string, answer: string) => void
   cancelTurn: () => void
   approveRequest: (id: string) => void
@@ -132,9 +133,11 @@ export function useClaude(): UseClaudeReturn {
                   target = cmd.length > 40 ? cmd.slice(0, 40) + '...' : cmd
                 } else if (typeof b.input.pattern === 'string') {
                   target = b.input.pattern as string
+                } else if (typeof b.input.description === 'string') {
+                  target = b.input.description as string
                 }
               }
-              return { action: b.name, target, status: 'pending' as const }
+              return { action: b.name, target, status: 'pending' as const, toolUseId: b.id }
             })
 
             updateCurrentMessage(m => ({
@@ -184,26 +187,37 @@ export function useClaude(): UseClaudeReturn {
             if ('file_path' in event.input) {
               target = String(event.input.file_path).split('/').pop() ?? event.tool_name
             } else if ('command' in event.input) {
-              // For Bash, show the command
               const cmd = String(event.input.command)
               target = cmd.length > 40 ? cmd.slice(0, 40) + '...' : cmd
             } else if ('pattern' in event.input) {
               target = String(event.input.pattern)
+            } else if ('description' in event.input) {
+              target = String(event.input.description)
             }
           }
 
-          const newTool: ToolUsage = {
-            action: toolAction,
-            target,
-            status: event.is_error ? 'error' : 'success',
-          }
-
-          // Add tool to current message
-          updateCurrentMessage(m => ({
-            ...m,
-            tools: [...(m.tools ?? []), newTool],
-            isThinking: false,
-          }))
+          updateCurrentMessage(m => {
+            const tools = [...(m.tools ?? [])]
+            const pendingIdx = tools.findIndex(t => t.status === 'pending' && t.action === toolAction)
+            if (pendingIdx >= 0) {
+              const existing = tools[pendingIdx]
+              tools[pendingIdx] = {
+                ...existing,
+                target: existing.target !== existing.action ? existing.target : target,
+                status: event.is_error ? 'error' : 'success',
+                children: existing.children?.map(c =>
+                  c.status === 'pending' ? { ...c, status: 'success' as const } : c
+                ),
+              }
+            } else {
+              tools.push({
+                action: toolAction,
+                target,
+                status: event.is_error ? 'error' : 'success',
+              })
+            }
+            return { ...m, tools, isThinking: false }
+          })
           break
         }
 
@@ -243,10 +257,16 @@ export function useClaude(): UseClaudeReturn {
             }))
           }
 
-          // Mark any remaining pending tools as success
+          // Mark any remaining pending tools (and their children) as success
           updateCurrentMessage(m => ({
             ...m,
-            tools: m.tools?.map(t => t.status === 'pending' ? { ...t, status: 'success' as const } : t),
+            tools: m.tools?.map(t => ({
+              ...t,
+              status: t.status === 'pending' ? 'success' as const : t.status,
+              children: t.children?.map(c =>
+                c.status === 'pending' ? { ...c, status: 'success' as const } : c
+              ),
+            })),
           }))
 
           finalizeTurn()
@@ -259,6 +279,66 @@ export function useClaude(): UseClaudeReturn {
           break
 
         default: {
+          // Handle progress events with agent child tools
+          const rawEvent = event as any
+          if (rawEvent.type === 'progress') {
+            const progressData = rawEvent.data
+            if (progressData?.type !== 'agent_progress') break
+
+            const parentToolUseID = rawEvent.parentToolUseID as string | undefined
+            if (!parentToolUseID) break
+
+            const innerMsg = progressData.message
+            if (innerMsg?.type !== 'assistant') break
+
+            const innerContent = innerMsg.message?.content
+            if (!Array.isArray(innerContent)) break
+
+            const childTools: ToolUsage[] = []
+            for (const block of innerContent) {
+              if (block.type === 'tool_use' && typeof block.name === 'string') {
+                let childTarget = block.name
+                const input = block.input as Record<string, unknown> | undefined
+                if (input) {
+                  if (typeof input.file_path === 'string') {
+                    childTarget = String(input.file_path).split('/').pop() ?? block.name
+                  } else if (typeof input.command === 'string') {
+                    const cmd = input.command as string
+                    childTarget = cmd.length > 40 ? cmd.slice(0, 40) + '...' : cmd
+                  } else if (typeof input.pattern === 'string') {
+                    childTarget = input.pattern as string
+                  } else if (typeof input.description === 'string') {
+                    childTarget = input.description as string
+                  }
+                }
+                childTools.push({
+                  action: block.name,
+                  target: childTarget,
+                  status: 'pending' as const,
+                  toolUseId: block.id,
+                })
+              }
+            }
+
+            if (childTools.length === 0) break
+
+            if (!isInTurn.current) startTurn()
+
+            updateCurrentMessage(m => {
+              const tools = (m.tools ?? []).map(t => {
+                if (t.toolUseId === parentToolUseID) {
+                  const existingIds = new Set((t.children ?? []).map(c => c.toolUseId))
+                  const newChildren = childTools.filter(c => !existingIds.has(c.toolUseId))
+                  if (newChildren.length === 0) return t
+                  return { ...t, children: [...(t.children ?? []), ...newChildren] }
+                }
+                return t
+              })
+              return { ...m, tools }
+            })
+            break
+          }
+
           // Unknown event — log but don't break anything
           console.log('[useClaude] unhandled event type:', (event as any).type)
           break
@@ -285,7 +365,7 @@ export function useClaude(): UseClaudeReturn {
     return () => { unsubMessage(); unsubState(); unsubDiff(); unsubBranch(); unsubHistory?.() }
   }, [startTurn, finalizeTurn, updateCurrentMessage])
 
-  const sendMessage = useCallback((text: string) => {
+  const sendMessage = useCallback((text: string, images?: Array<{ base64: string; mediaType: string; name: string }>) => {
     // Finalize any in-progress turn before starting a new user message
     if (isInTurn.current) finalizeTurn()
 
@@ -294,12 +374,13 @@ export function useClaude(): UseClaudeReturn {
       id: `msg-${++messageIdCounter.current}`,
       role: 'user',
       content: text,
+      images,
     }])
 
     // Immediately start the assistant turn so thinking indicator shows instantly
     startTurn()
 
-    window.claude?.sendMessage(text)
+    window.claude?.sendMessage(text, images)
   }, [finalizeTurn, startTurn])
 
   const answerQuestion = useCallback((toolUseId: string, answer: string) => {
@@ -322,6 +403,23 @@ export function useClaude(): UseClaudeReturn {
     // In WebSocket SDK mode, a regular user message continues the turn
     window.claude?.sendMessage(answer)
   }, [updateCurrentMessage])
+
+  const startReviewSession = useCallback(async (workingDir: string, reviewMessage: string) => {
+    setMessages([])
+    setDiffs([])
+    setProjectPath(workingDir)
+    currentTurnId.current = null
+    isInTurn.current = false
+
+    try {
+      await window.claude?.startSession(workingDir)
+      // Send the review context as the first message after connection
+      setTimeout(() => sendMessage(reviewMessage), 500)
+    } catch (err) {
+      console.error('[useClaude] startReviewSession failed:', err)
+      setConnectionState('idle')
+    }
+  }, [sendMessage])
 
   const startSession = useCallback(async (workingDir: string) => {
     setMessages([])
@@ -370,6 +468,6 @@ export function useClaude(): UseClaudeReturn {
 
   return {
     connectionState, messages, diffs, branch, projectPath, pendingApproval,
-    startSession, resumeSession, sendMessage, answerQuestion, cancelTurn, approveRequest, denyRequest,
+    startSession, startReviewSession, resumeSession, sendMessage, answerQuestion, cancelTurn, approveRequest, denyRequest,
   }
 }

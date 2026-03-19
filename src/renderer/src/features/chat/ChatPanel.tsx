@@ -8,12 +8,15 @@ interface Props {
   pendingApproval: { id: string; toolName: string; input: Record<string, unknown> } | null
   onApprove: (id: string) => void
   onDeny: (id: string) => void
-  onSend: (text: string) => void
+  onSend: (text: string, images?: Array<{ base64: string; mediaType: string; name: string }>) => void
   onAnswerQuestion?: (toolUseId: string, answer: string) => void
+  onOpenFile?: (filePath: string) => void
   theme: 'light' | 'dark'
   disabled: boolean
   model: string
   onModelChange: (model: string) => void
+  hasSession?: boolean
+  onNewSession?: () => void
 }
 
 export function ChatPanel({
@@ -23,10 +26,13 @@ export function ChatPanel({
   onDeny,
   onSend,
   onAnswerQuestion,
+  onOpenFile,
   theme,
   disabled,
   model,
   onModelChange,
+  hasSession,
+  onNewSession,
 }: Props) {
   return (
     <div className="h-full flex flex-col">
@@ -38,8 +44,8 @@ export function ChatPanel({
           onDeny={() => onDeny(pendingApproval.id)}
         />
       )}
-      <MessageList messages={messages} theme={theme} onSend={onSend} onAnswerQuestion={onAnswerQuestion} />
-      <InputBox onSend={onSend} disabled={disabled} model={model} onModelChange={onModelChange} />
+      <MessageList messages={messages} theme={theme} onSend={onSend} onAnswerQuestion={onAnswerQuestion} onOpenFile={onOpenFile} hasSession={hasSession} onNewSession={onNewSession} />
+      {hasSession && <InputBox onSend={onSend} disabled={disabled} model={model} onModelChange={onModelChange} />}
     </div>
   )
 }

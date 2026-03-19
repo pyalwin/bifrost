@@ -169,3 +169,192 @@ body {
 [data-resize-handle][data-resize-handle-active] {
   background-color: var(--border) !important;
 }
+
+/* ── Plan review markdown ── */
+
+.prose-plan {
+  font-size: 13.5px;
+  line-height: 1.72;
+  color: var(--foreground);
+}
+
+/* Headings — clear hierarchy with generous spacing */
+.prose-plan h1 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  margin: 28px 0 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  color: var(--foreground);
+}
+.prose-plan h1:first-child { margin-top: 0; }
+
+.prose-plan h2 {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 24px 0 8px;
+  color: var(--foreground);
+}
+
+.prose-plan h3 {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 20px 0 6px;
+  color: var(--foreground);
+}
+
+/* Body text */
+.prose-plan p {
+  margin: 8px 0;
+  color: var(--secondary);
+}
+.prose-plan p:first-child { margin-top: 0; }
+.prose-plan p:last-child { margin-bottom: 0; }
+
+.prose-plan strong {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.prose-plan em {
+  color: var(--secondary);
+  font-style: italic;
+}
+
+/* Inline code */
+.prose-plan code {
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+  font-size: 0.88em;
+  background: var(--accent, #27272a);
+  padding: 2px 7px;
+  border-radius: 4px;
+  color: var(--foreground);
+  font-weight: 500;
+}
+
+/* Code blocks */
+.prose-plan pre {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin: 12px 0;
+  overflow-x: auto;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--secondary);
+}
+.prose-plan pre code {
+  background: transparent;
+  padding: 0;
+  font-size: inherit;
+  font-weight: 400;
+  color: inherit;
+}
+
+/* Lists */
+.prose-plan ul {
+  padding-left: 22px;
+  margin: 8px 0;
+  list-style-type: disc;
+}
+.prose-plan ol {
+  padding-left: 22px;
+  margin: 8px 0;
+  list-style-type: decimal;
+}
+.prose-plan li {
+  margin: 4px 0;
+  color: var(--secondary);
+  line-height: 1.72;
+}
+.prose-plan li::marker {
+  color: var(--muted-foreground);
+}
+.prose-plan li p {
+  margin: 2px 0;
+}
+
+/* Nested lists */
+.prose-plan ul ul,
+.prose-plan ol ul {
+  margin: 4px 0;
+}
+
+/* Links */
+.prose-plan a {
+  color: #60a5fa;
+  text-decoration: none;
+}
+.prose-plan a:hover {
+  text-decoration: underline;
+}
+
+/* Blockquotes */
+.prose-plan blockquote {
+  border-left: 3px solid var(--border);
+  padding: 4px 0 4px 16px;
+  margin: 12px 0;
+  color: var(--muted-foreground);
+  font-style: italic;
+}
+.prose-plan blockquote p {
+  color: inherit;
+}
+
+/* Horizontal rules */
+.prose-plan hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 20px 0;
+}
+
+/* Tables */
+.prose-plan table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 12.5px;
+}
+.prose-plan thead th {
+  background: var(--muted);
+  font-weight: 600;
+  text-align: left;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.prose-plan tbody td {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  color: var(--secondary);
+  vertical-align: top;
+}
+.prose-plan tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Checkboxes (task steps) */
+.prose-plan input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: #22c55e;
+  margin-right: 8px;
+  vertical-align: middle;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+/* Images */
+.prose-plan img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 12px 0;
+}

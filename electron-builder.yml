@@ -9,35 +9,54 @@ files:
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  - '!{logo.png,.superpowers,docs}'
 asarUnpack:
   - resources/**
-win:
-  executableName: bifrost
-nsis:
-  artifactName: ${name}-${version}-setup.${ext}
-  shortcutName: ${productName}
-  uninstallDisplayName: ${productName}
-  createDesktopShortcut: always
 mac:
+  icon: build/icon.icns
+  category: public.app-category.developer-tools
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+    - target: zip
+      arch:
+        - arm64
+        - x64
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
-    - NSCameraUsageDescription: Application requests access to the device's camera.
-    - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
-    - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
-    - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
+    - NSDocumentsFolderUsageDescription: Bifrost needs access to your project files.
+    - NSDownloadsFolderUsageDescription: Bifrost needs access to download files.
   notarize: false
+  hardenedRuntime: true
+  gatekeeperAssess: false
 dmg:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: Bifrost-${version}-${arch}.${ext}
+  icon: build/icon.icns
+  title: Bifrost
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+win:
+  executableName: bifrost
+  icon: build/icon.ico
+nsis:
+  artifactName: Bifrost-${version}-setup.${ext}
+  shortcutName: Bifrost
+  uninstallDisplayName: Bifrost
+  createDesktopShortcut: always
 linux:
   target:
     - AppImage
-    - snap
     - deb
-  maintainer: electronjs.org
-  category: Utility
+  maintainer: bifrost
+  category: Development
+  icon: build/icon.png
 appImage:
-  artifactName: ${name}-${version}.${ext}
+  artifactName: Bifrost-${version}.${ext}
 npmRebuild: false
-publish:
-  provider: generic
-  url: https://example.com/auto-updates

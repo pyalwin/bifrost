@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Folder, PanelLeftClose, PanelLeftOpen, SquarePen } from 'lucide-react'
+import { ChevronDown, ChevronRight, Folder, SquarePen } from 'lucide-react'
 import { cn } from '../../lib/utils'
-import type { SessionInfo } from '../../types'
+import type { ProjectHierarchy, BranchGroup, PullRequest } from '../../types'
 
 interface SidebarProps {
   isOpen: boolean
@@ -9,13 +9,9 @@ interface SidebarProps {
   onNewSession: () => void
   onResumeSession: (sessionId: string, workingDir: string) => void
   activeSessionId?: string | null
-}
-
-interface ProjectGroup {
-  name: string
-  workingDir: string
-  sessions: SessionInfo[]
-  latestTimestamp: number
+  currentBranch?: string
+  pullRequest?: PullRequest | null
+  onCreatePR?: () => void
 }
 
 function timeAgo(timestamp: number): string {
@@ -33,119 +29,137 @@ function timeAgo(timestamp: number): string {
   return `${months}mo`
 }
 
-function extractProjectName(workingDir: string): string {
-  const parts = workingDir.split('/').filter(Boolean)
-  const name = parts.pop() ?? workingDir
-  if (['code', 'src', 'projects', 'repos', 'work', 'dev'].includes(name.toLowerCase()) && parts.length > 0) {
-    return parts.pop() + '/' + name
-  }
-  return name
-}
-
-function groupSessionsByProject(sessions: SessionInfo[]): ProjectGroup[] {
-  const map = new Map<string, ProjectGroup>()
-  for (const session of sessions) {
-    const existing = map.get(session.workingDir)
-    if (existing) {
-      existing.sessions.push(session)
-      if (session.timestamp > existing.latestTimestamp) existing.latestTimestamp = session.timestamp
-    } else {
-      map.set(session.workingDir, {
-        name: extractProjectName(session.workingDir),
-        workingDir: session.workingDir,
-        sessions: [session],
-        latestTimestamp: session.timestamp,
-      })
-    }
-  }
-  for (const group of map.values()) group.sessions.sort((a, b) => b.timestamp - a.timestamp)
-  return Array.from(map.values()).sort((a, b) => b.latestTimestamp - a.latestTimestamp)
-}
-
-const MAX_VISIBLE = 10
-
-function ProjectRow({
-  group, activeSessionId, onResumeSession,
+function BranchRow({
+  branch, isExpanded, isCurrentBranch, activeSessionId,
+  onToggle, onResumeSession, pullRequest, onCreatePR,
 }: {
-  group: ProjectGroup
+  branch: BranchGroup
+  isExpanded: boolean
+  isCurrentBranch: boolean
   activeSessionId?: string | null
+  onToggle: () => void
   onResumeSession: (sessionId: string, workingDir: string) => void
+  pullRequest?: PullRequest | null
+  onCreatePR?: () => void
 }) {
-  const [showAll, setShowAll] = useState(false)
-  const visible = showAll ? group.sessions : group.sessions.slice(0, MAX_VISIBLE)
-  const remaining = group.sessions.length - MAX_VISIBLE
+  const sessionCount = branch.sessions.length
 
   return (
-    <div className="mb-2">
-      {/* Project name */}
-      <div className="flex items-center gap-2 px-4 pt-3 pb-1">
-        <Folder className="w-4 h-4 text-muted-foreground/60 shrink-0" />
-        <span className="text-[13px] font-medium text-foreground/80 truncate">{group.name}</span>
-      </div>
-
-      {/* Sessions */}
-      <div>
-        {visible.map((session) => {
-          const isActive = session.id === activeSessionId
-          return (
-            <button
-              key={session.id}
-              onClick={() => onResumeSession(session.id, session.workingDir)}
-              className={cn(
-                'w-full text-left px-4 py-[7px] flex items-center gap-2 transition-colors',
-                isActive
-                  ? 'bg-muted text-foreground'
-                  : 'text-foreground/70 hover:bg-muted/60 hover:text-foreground'
-              )}
-            >
-              <span className="text-[13px] truncate flex-1">
-                {session.firstMessage || 'Untitled'}
-              </span>
-              <span className="text-[12px] text-muted-foreground/50 shrink-0 tabular-nums">
-                {timeAgo(session.timestamp)}
-              </span>
-            </button>
-          )
-        })}
-
-        {remaining > 0 && !showAll && (
-          <button
-            onClick={() => setShowAll(true)}
-            className="w-full text-left px-4 py-[5px] text-[12px] text-muted-foreground/40 hover:text-muted-foreground transition-colors"
-          >
-            Show more
-          </button>
+    <div>
+      <button
+        onClick={onToggle}
+        className={cn(
+          'w-full flex items-center gap-1.5 px-4 pl-7 py-[5px] text-[12px] transition-colors',
+          isCurrentBranch
+            ? 'text-foreground font-medium'
+            : 'text-muted-foreground hover:text-foreground'
         )}
-      </div>
+      >
+        {isExpanded
+          ? <ChevronDown className="w-3 h-3 shrink-0" />
+          : <ChevronRight className="w-3 h-3 shrink-0" />
+        }
+        <span className="truncate">{branch.name}</span>
+        {!isExpanded && (
+          <span className="text-[10px] text-muted-foreground/30 ml-auto shrink-0">
+            {sessionCount}
+          </span>
+        )}
+      </button>
+
+      {isExpanded && (
+        <div>
+          {branch.sessions.map((session) => {
+            const isActive = session.id === activeSessionId
+            return (
+              <button
+                key={session.id}
+                onClick={() => onResumeSession(session.id, session.workingDir)}
+                className={cn(
+                  'w-full text-left px-4 pl-[42px] py-[6px] flex items-center gap-2 text-[12px] transition-colors',
+                  isActive
+                    ? 'bg-muted text-foreground'
+                    : 'text-foreground/60 hover:bg-muted/60 hover:text-foreground'
+                )}
+              >
+                <span className="truncate flex-1">{session.firstMessage || 'Untitled'}</span>
+                <span className="text-[11px] text-muted-foreground/40 shrink-0 tabular-nums">
+                  {timeAgo(session.timestamp)}
+                </span>
+              </button>
+            )
+          })}
+
+          {/* PR info */}
+          {isCurrentBranch && pullRequest ? (
+            <div className="flex items-center gap-1.5 px-4 pl-[42px] py-[5px] text-[11px] text-muted-foreground">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill={pullRequest.isDraft ? 'currentColor' : '#3fb950'}><path d="M1.5 3.25a2.25 2.25 0 013 2.122v5.256a2.251 2.251 0 11-1.5 0V5.372A2.25 2.25 0 011.5 3.25zm5.677-.177L9.573.677A.25.25 0 0110 .854V2.5h1A2.5 2.5 0 0113.5 5v5.628a2.251 2.251 0 11-1.5 0V5a1 1 0 00-1-1h-1v1.646a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354z"/></svg>
+              <span className="truncate">PR #{pullRequest.number}</span>
+              <span className={cn(
+                "px-1.5 py-0 rounded text-[10px] font-medium shrink-0",
+                pullRequest.isDraft ? "bg-muted text-muted-foreground" : "bg-green-500/15 text-green-500"
+              )}>
+                {pullRequest.isDraft ? 'Draft' : 'Open'}
+              </span>
+            </div>
+          ) : isCurrentBranch && onCreatePR ? (
+            <button
+              onClick={onCreatePR}
+              className="flex items-center gap-1.5 px-4 pl-[42px] py-[5px] text-[11px] text-green-500 hover:text-green-400 transition-colors w-full text-left"
+            >
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 3.25a2.25 2.25 0 013 2.122v5.256a2.251 2.251 0 11-1.5 0V5.372A2.25 2.25 0 011.5 3.25zm5.677-.177L9.573.677A.25.25 0 0110 .854V2.5h1A2.5 2.5 0 0113.5 5v5.628a2.251 2.251 0 11-1.5 0V5a1 1 0 00-1-1h-1v1.646a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354z"/></svg>
+              Create Pull Request
+            </button>
+          ) : null}
+        </div>
+      )}
     </div>
   )
 }
 
 export function Sidebar({
-  isOpen, onToggle, onNewSession, onResumeSession, activeSessionId,
+  isOpen, onToggle, onNewSession, onResumeSession, activeSessionId, currentBranch,
+  pullRequest, onCreatePR,
 }: SidebarProps) {
-  const [sessions, setSessions] = useState<SessionInfo[]>([])
+  const [projects, setProjects] = useState<ProjectHierarchy[]>([])
+  const [expandedBranches, setExpandedBranches] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (!isOpen) return
     window.claude
-      ?.listSessions()
-      .then((data) => setSessions(data ?? []))
-      .catch(() => setSessions([]))
-  }, [isOpen])
+      ?.listSessionsGrouped()
+      .then((data) => {
+        setProjects(data ?? [])
+        // Auto-expand the current branch
+        if (currentBranch) {
+          const keys = (data ?? []).flatMap(p =>
+            p.branches.filter(b => b.name === currentBranch).map(b => `${p.workingDir}:${b.name}`)
+          )
+          if (keys.length > 0) {
+            setExpandedBranches(prev => {
+              const next = new Set(prev)
+              for (const k of keys) next.add(k)
+              return next
+            })
+          }
+        }
+      })
+      .catch(() => setProjects([]))
+  }, [isOpen, currentBranch])
 
-  const projects = groupSessionsByProject(sessions)
+  const toggleBranch = (key: string) => {
+    setExpandedBranches(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
 
   return (
-    <div
-      className={cn(
-        'flex flex-col bg-title-bar border-r border-border overflow-hidden transition-all duration-200 shrink-0',
-        isOpen ? 'w-[260px]' : 'w-0'
-      )}
-      style={{ minWidth: isOpen ? 260 : 0 }}
-    >
-      {isOpen && (
-        <div className="flex flex-col h-full animate-fade-in">
+    <div className="flex flex-col h-full overflow-hidden">
+      {(
+        <div className="flex flex-col h-full">
           {/* Nav items */}
           <div className="px-3 pt-3 pb-1 space-y-0.5 shrink-0">
             <button
@@ -162,24 +176,42 @@ export function Sidebar({
             <span className="text-[12px] font-medium text-muted-foreground/60">Threads</span>
           </div>
 
-          {/* Project groups with sessions */}
+          {/* Project → Branch → Sessions hierarchy */}
           <div className="flex-1 overflow-y-auto overflow-x-hidden pb-2">
             {projects.length === 0 ? (
               <p className="text-[12px] text-muted-foreground/40 px-4 py-6 text-center">
                 No sessions yet
               </p>
             ) : (
-              projects.map((group) => (
-                <ProjectRow
-                  key={group.workingDir}
-                  group={group}
-                  activeSessionId={activeSessionId}
-                  onResumeSession={onResumeSession}
-                />
+              projects.map((project) => (
+                <div key={project.workingDir} className="mb-2">
+                  {/* Project header */}
+                  <div className="flex items-center gap-2 px-4 pt-3 pb-1">
+                    <Folder className="w-4 h-4 text-muted-foreground/60 shrink-0" />
+                    <span className="text-[13px] font-medium text-foreground/80 truncate">{project.name}</span>
+                  </div>
+
+                  {/* Branch groups */}
+                  {project.branches.map((branch) => {
+                    const branchKey = `${project.workingDir}:${branch.name}`
+                    return (
+                      <BranchRow
+                        key={branchKey}
+                        branch={branch}
+                        isExpanded={expandedBranches.has(branchKey)}
+                        isCurrentBranch={branch.name === currentBranch}
+                        activeSessionId={activeSessionId}
+                        onToggle={() => toggleBranch(branchKey)}
+                        onResumeSession={onResumeSession}
+                        pullRequest={branch.name === currentBranch ? pullRequest : undefined}
+                        onCreatePR={branch.name === currentBranch ? onCreatePR : undefined}
+                      />
+                    )
+                  })}
+                </div>
               ))
             )}
           </div>
-
         </div>
       )}
     </div>
