@@ -129,10 +129,16 @@ export default function App() {
   }, [])
 
   const openPlanReview = useCallback(async (filePath: string) => {
-    const content = await window.claude?.loadPlanFile(filePath)
-    if (content) {
-      const title = filePath.split('/').pop()?.replace('.md', '').replace(/[-_]/g, ' ').replace(/^\d{4}-\d{2}-\d{2}-?/, '').replace(/^\w/, c => c.toUpperCase()) ?? 'Plan'
-      setPlanReview({ title, filePath, content })
+    console.log('[App] openPlanReview called with:', filePath)
+    try {
+      const content = await window.claude?.loadPlanFile(filePath)
+      console.log('[App] loadPlanFile result:', content ? `${content.length} chars` : 'null')
+      if (content) {
+        const title = filePath.split('/').pop()?.replace('.md', '').replace(/[-_]/g, ' ').replace(/^\d{4}-\d{2}-\d{2}-?/, '').replace(/^\w/, c => c.toUpperCase()) ?? 'Plan'
+        setPlanReview({ title, filePath, content })
+      }
+    } catch (err) {
+      console.error('[App] openPlanReview error:', err)
     }
   }, [])
 
