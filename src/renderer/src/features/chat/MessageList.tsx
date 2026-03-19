@@ -21,7 +21,7 @@ export function MessageList({ messages, theme, onSend, onAnswerQuestion }: Props
       <div className="max-w-3xl mx-auto">
         {messages.map((msg) =>
           msg.role === 'user' ? (
-            <UserMessage key={msg.id} content={msg.content} />
+            <UserMessage key={msg.id} content={msg.content} images={msg.images} />
           ) : (
             <AIMessage key={msg.id} message={msg} theme={theme} onAnswerQuestion={onAnswerQuestion} />
           )
