@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { ChevronDown, ChevronRight, Search } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import type { DiffFileData } from '../../types'
@@ -99,10 +99,11 @@ function FolderRow({ node, selectedFile, onSelectFile, depth = 0 }: {
 
 export function FileTree({ files, selectedFile, onSelectFile }: Props) {
   const [filter, setFilter] = useState('')
-  const filteredFiles = filter
-    ? files.filter(f => f.filename.toLowerCase().includes(filter.toLowerCase()))
-    : files
-  const tree = buildTree(filteredFiles)
+  const filteredFiles = useMemo(() =>
+    filter ? files.filter(f => f.filename.toLowerCase().includes(filter.toLowerCase())) : files,
+    [files, filter]
+  )
+  const tree = useMemo(() => buildTree(filteredFiles), [filteredFiles])
 
   return (
     <div className="h-full flex flex-col">

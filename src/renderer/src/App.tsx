@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useTransition } from 'react'
 import { useTheme } from './hooks/use-theme'
 import { useClaude } from './hooks/use-claude'
 import { TitleBar } from './features/title-bar/TitleBar'
@@ -19,7 +19,11 @@ export default function App() {
   const [manualApproval, setManualApproval] = useState(false)
   const [_sessionError, setSessionError] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [activeTab, setActiveTab] = useState<TabId>('conversation')
+  const [activeTab, setActiveTabRaw] = useState<TabId>('conversation')
+  const [, startTransition] = useTransition()
+  const setActiveTab = useCallback((tab: TabId) => {
+    startTransition(() => setActiveTabRaw(tab))
+  }, [])
   const [model, setModel] = useState(() => localStorage.getItem('bifrost-model') ?? 'sonnet')
   const [reviews, setReviews] = useState<Review[]>([])
   const [activeReviewId, setActiveReviewId] = useState<string | null>(null)
