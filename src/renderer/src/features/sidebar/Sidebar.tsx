@@ -115,21 +115,24 @@ function ProjectRow({
               <span className="text-[13px] truncate flex-1">
                 {session.firstMessage || 'Untitled'}
               </span>
-              {onArchiveSession && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onArchiveSession(session.id) }}
-                  className="opacity-0 group-hover/session:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted shrink-0"
-                  title={archiveMode === 'archive' ? 'Archive thread' : 'Unarchive thread'}
-                >
-                  <ArchiveIcon className="w-3.5 h-3.5 text-muted-foreground/60" />
-                </button>
-              )}
               <span className={cn(
                 'text-[12px] text-muted-foreground/50 shrink-0 tabular-nums',
                 onArchiveSession && 'group-hover/session:hidden'
               )}>
                 {timeAgo(session.timestamp)}
               </span>
+              {onArchiveSession && (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => { e.stopPropagation(); onArchiveSession(session.id) }}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); onArchiveSession(session.id) } }}
+                  className="hidden group-hover/session:inline-flex opacity-0 group-hover/session:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted shrink-0 cursor-pointer"
+                  title={archiveMode === 'archive' ? 'Archive thread' : 'Unarchive thread'}
+                >
+                  <ArchiveIcon className="w-3.5 h-3.5 text-muted-foreground/60" />
+                </span>
+              )}
             </button>
           )
         })}
@@ -167,27 +170,35 @@ export function Sidebar({
   }, [isOpen])
 
   const handleArchiveProject = async (workingDir: string) => {
-    await window.claude?.archiveItem('project', workingDir)
-    setArchivedIds((prev) => ({ ...prev, projects: [...prev.projects, workingDir] }))
+    try {
+      await window.claude?.archiveItem('project', workingDir)
+      setArchivedIds((prev) => ({ ...prev, projects: [...prev.projects, workingDir] }))
+    } catch { /* IPC failure — don't update state */ }
   }
 
   const handleArchiveSession = async (sessionId: string) => {
-    await window.claude?.archiveItem('session', sessionId)
-    setArchivedIds((prev) => ({ ...prev, sessions: [...prev.sessions, sessionId] }))
+    try {
+      await window.claude?.archiveItem('session', sessionId)
+      setArchivedIds((prev) => ({ ...prev, sessions: [...prev.sessions, sessionId] }))
+    } catch { /* IPC failure — don't update state */ }
   }
 
   const handleUnarchiveProject = async (workingDir: string) => {
-    await window.claude?.unarchiveItem('project', workingDir)
-    const projectSessionIds = sessions.filter((s) => s.workingDir === workingDir).map((s) => s.id)
-    setArchivedIds((prev) => ({
-      projects: prev.projects.filter((p) => p !== workingDir),
-      sessions: prev.sessions.filter((s) => !projectSessionIds.includes(s)),
-    }))
+    try {
+      await window.claude?.unarchiveItem('project', workingDir)
+      const projectSessionIds = sessions.filter((s) => s.workingDir === workingDir).map((s) => s.id)
+      setArchivedIds((prev) => ({
+        projects: prev.projects.filter((p) => p !== workingDir),
+        sessions: prev.sessions.filter((s) => !projectSessionIds.includes(s)),
+      }))
+    } catch { /* IPC failure — don't update state */ }
   }
 
   const handleUnarchiveSession = async (sessionId: string) => {
-    await window.claude?.unarchiveItem('session', sessionId)
-    setArchivedIds((prev) => ({ ...prev, sessions: prev.sessions.filter((s) => s !== sessionId) }))
+    try {
+      await window.claude?.unarchiveItem('session', sessionId)
+      setArchivedIds((prev) => ({ ...prev, sessions: prev.sessions.filter((s) => s !== sessionId) }))
+    } catch { /* IPC failure — don't update state */ }
   }
 
   const activeSessions = sessions.filter(
