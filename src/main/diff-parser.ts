@@ -43,7 +43,7 @@ export function parseUnifiedDiff(diffOutput: string): DiffFileData[] {
   const parsed = parseDiff(diffOutput)
 
   return parsed.map((file) => {
-    const filename = file.to ?? file.from ?? 'unknown'
+    const filename = (file.to && file.to !== '/dev/null' ? file.to : file.from) ?? 'unknown'
 
     const hunks: DiffHunk[] = file.chunks.map((chunk) => ({
       oldStart: chunk.oldStart,
