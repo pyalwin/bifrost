@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ChevronDown, ChevronRight, Folder, GitBranch, SquarePen } from 'lucide-react'
 import { cn } from '../../lib/utils'
-import type { ProjectHierarchy, BranchGroup } from '../../types'
+import type { ProjectHierarchy, BranchGroup, PullRequest } from '../../types'
 
 interface SidebarProps {
   isOpen: boolean
@@ -10,6 +10,8 @@ interface SidebarProps {
   onResumeSession: (sessionId: string, workingDir: string) => void
   activeSessionId?: string | null
   currentBranch?: string
+  pullRequest?: PullRequest | null
+  onCreatePR?: () => void
 }
 
 function timeAgo(timestamp: number): string {
@@ -29,7 +31,7 @@ function timeAgo(timestamp: number): string {
 
 function BranchRow({
   branch, isExpanded, isCurrentBranch, activeSessionId,
-  onToggle, onResumeSession,
+  onToggle, onResumeSession, pullRequest, onCreatePR,
 }: {
   branch: BranchGroup
   isExpanded: boolean
@@ -37,6 +39,8 @@ function BranchRow({
   activeSessionId?: string | null
   onToggle: () => void
   onResumeSession: (sessionId: string, workingDir: string) => void
+  pullRequest?: PullRequest | null
+  onCreatePR?: () => void
 }) {
   const sessionCount = branch.sessions.length
 
@@ -86,6 +90,28 @@ function BranchRow({
               </button>
             )
           })}
+
+          {/* PR info */}
+          {isCurrentBranch && pullRequest ? (
+            <div className="flex items-center gap-1.5 px-4 pl-[42px] py-[5px] text-[11px] text-muted-foreground">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill={pullRequest.isDraft ? 'currentColor' : '#3fb950'}><path d="M1.5 3.25a2.25 2.25 0 013 2.122v5.256a2.251 2.251 0 11-1.5 0V5.372A2.25 2.25 0 011.5 3.25zm5.677-.177L9.573.677A.25.25 0 0110 .854V2.5h1A2.5 2.5 0 0113.5 5v5.628a2.251 2.251 0 11-1.5 0V5a1 1 0 00-1-1h-1v1.646a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354z"/></svg>
+              <span className="truncate">PR #{pullRequest.number}</span>
+              <span className={cn(
+                "px-1.5 py-0 rounded text-[10px] font-medium shrink-0",
+                pullRequest.isDraft ? "bg-muted text-muted-foreground" : "bg-green-500/15 text-green-500"
+              )}>
+                {pullRequest.isDraft ? 'Draft' : 'Open'}
+              </span>
+            </div>
+          ) : isCurrentBranch && onCreatePR ? (
+            <button
+              onClick={onCreatePR}
+              className="flex items-center gap-1.5 px-4 pl-[42px] py-[5px] text-[11px] text-green-500 hover:text-green-400 transition-colors w-full text-left"
+            >
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 3.25a2.25 2.25 0 013 2.122v5.256a2.251 2.251 0 11-1.5 0V5.372A2.25 2.25 0 011.5 3.25zm5.677-.177L9.573.677A.25.25 0 0110 .854V2.5h1A2.5 2.5 0 0113.5 5v5.628a2.251 2.251 0 11-1.5 0V5a1 1 0 00-1-1h-1v1.646a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354z"/></svg>
+              Create Pull Request
+            </button>
+          ) : null}
         </div>
       )}
     </div>
@@ -94,6 +120,7 @@ function BranchRow({
 
 export function Sidebar({
   isOpen, onToggle, onNewSession, onResumeSession, activeSessionId, currentBranch,
+  pullRequest, onCreatePR,
 }: SidebarProps) {
   const [projects, setProjects] = useState<ProjectHierarchy[]>([])
   const [expandedBranches, setExpandedBranches] = useState<Set<string>>(new Set())
@@ -183,6 +210,8 @@ export function Sidebar({
                         activeSessionId={activeSessionId}
                         onToggle={() => toggleBranch(branchKey)}
                         onResumeSession={onResumeSession}
+                        pullRequest={branch.name === currentBranch ? pullRequest : undefined}
+                        onCreatePR={branch.name === currentBranch ? onCreatePR : undefined}
                       />
                     )
                   })}

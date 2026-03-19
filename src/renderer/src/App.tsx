@@ -7,7 +7,7 @@ import { ChatPanel } from './features/chat/ChatPanel'
 import { DiffPanel } from './features/diff/DiffPanel'
 import { ReviewTabsBar } from './features/diff/ReviewTabsBar'
 import { cn } from './lib/utils'
-import type { Review } from './types/index'
+import type { Review, PullRequest } from './types/index'
 
 export default function App() {
   const { theme, toggleTheme } = useTheme()
@@ -19,6 +19,8 @@ export default function App() {
   const [model, setModel] = useState(() => localStorage.getItem('bifrost-model') ?? 'sonnet')
   const [reviews, setReviews] = useState<Review[]>([])
   const [activeReviewId, setActiveReviewId] = useState<string | null>(null)
+  const [currentPR, setCurrentPR] = useState<PullRequest | null>(null)
+  const [_showCreatePR, setShowCreatePR] = useState(false)
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -37,6 +39,17 @@ export default function App() {
       setDiffOpen(true)
     }
   }, [claude.diffs.length])
+
+  // Fetch PR for current branch
+  useEffect(() => {
+    if (claude.branch) {
+      window.claude?.getPullRequest()
+        .then(pr => setCurrentPR(pr))
+        .catch(() => setCurrentPR(null))
+    } else {
+      setCurrentPR(null)
+    }
+  }, [claude.branch])
 
   const handleNewSession = useCallback(async () => {
     setSessionError(null)
@@ -111,6 +124,7 @@ export default function App() {
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         diffStats={diffStats}
         onToggleDiff={() => setDiffOpen(!diffOpen)}
+        pullRequest={currentPR}
       />
       <div className="flex-1 flex overflow-hidden">
         <Sidebar
@@ -120,6 +134,8 @@ export default function App() {
           onResumeSession={handleResumeSession}
           activeSessionId={null}
           currentBranch={claude.branch}
+          pullRequest={currentPR}
+          onCreatePR={() => setShowCreatePR(true)}
         />
         {/* Chat — takes remaining space */}
         <div className="flex-1 min-w-0">

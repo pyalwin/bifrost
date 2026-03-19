@@ -17,6 +17,7 @@ interface TitleBarProps {
   diffStats?: { additions: number; deletions: number } | null
   onToggleDiff?: () => void
   onBranchChange?: () => void
+  pullRequest?: { number: number; title: string; url: string; isDraft: boolean; state: string } | null
 }
 
 const stateColors: Record<ConnectionState, string> = {
@@ -39,7 +40,8 @@ export function TitleBar({
   onToggleSidebar,
   diffStats,
   onToggleDiff,
-  onBranchChange
+  onBranchChange,
+  pullRequest,
 }: TitleBarProps) {
   // Extract project name from path (last directory component)
   const projectName = projectPath ? projectPath.split('/').filter(Boolean).pop() ?? '' : ''
@@ -284,6 +286,26 @@ export function TitleBar({
         >
           {theme === 'light' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
+        {pullRequest && (
+          <div
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-[11px] font-semibold",
+              pullRequest.isDraft
+                ? "border-border text-muted-foreground"
+                : "border-green-600/50 text-green-500"
+            )}
+            title={pullRequest.title}
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 3.25a2.25 2.25 0 013 2.122v5.256a2.251 2.251 0 11-1.5 0V5.372A2.25 2.25 0 011.5 3.25zm5.677-.177L9.573.677A.25.25 0 0110 .854V2.5h1A2.5 2.5 0 0113.5 5v5.628a2.251 2.251 0 11-1.5 0V5a1 1 0 00-1-1h-1v1.646a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354z"/></svg>
+            PR #{pullRequest.number}
+            <span className={cn(
+              "px-1.5 rounded text-[10px]",
+              pullRequest.isDraft ? "bg-muted" : "bg-green-500/15"
+            )}>
+              {pullRequest.isDraft ? 'Draft' : 'Open'}
+            </span>
+          </div>
+        )}
         {diffStats && (
           <button
             onClick={onToggleDiff}
