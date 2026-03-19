@@ -5,6 +5,7 @@ import { TitleBar } from './features/title-bar/TitleBar'
 import { Sidebar } from './features/sidebar/Sidebar'
 import { ChatPanel } from './features/chat/ChatPanel'
 import { DiffPanel } from './features/diff/DiffPanel'
+import { ReviewTabsBar } from './features/diff/ReviewTabsBar'
 import { cn } from './lib/utils'
 import type { Review } from './types/index'
 
@@ -16,6 +17,8 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [diffOpen, setDiffOpen] = useState(false)
   const [model, setModel] = useState(() => localStorage.getItem('bifrost-model') ?? 'sonnet')
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [activeReviewId, setActiveReviewId] = useState<string | null>(null)
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -50,6 +53,10 @@ export default function App() {
   }, [claude])
 
   const handleSubmitReview = useCallback(async (review: Review) => {
+    // Store the review for tracking
+    setReviews(prev => [...prev, review])
+    setActiveReviewId(review.id)
+
     const workingDir = claude.projectPath
     if (!workingDir) return
 
@@ -131,10 +138,22 @@ export default function App() {
         </div>
         {/* Diff — collapsible from right */}
         <div className={cn(
-          "border-l border-border transition-all duration-300 overflow-hidden",
+          "border-l border-border transition-all duration-300 overflow-hidden flex flex-col",
           diffOpen ? "w-[45%]" : "w-0"
         )}>
-          {diffOpen && <DiffPanel files={claude.diffs} theme={theme} onSubmitReview={handleSubmitReview} />}
+          {diffOpen && (
+            <>
+              <ReviewTabsBar
+                reviews={reviews}
+                activeReviewId={activeReviewId}
+                onSelectReview={setActiveReviewId}
+                onStartNewReview={() => {}}
+              />
+              <div className="flex-1 overflow-hidden">
+                <DiffPanel files={claude.diffs} theme={theme} onSubmitReview={handleSubmitReview} />
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
