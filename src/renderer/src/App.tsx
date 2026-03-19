@@ -177,8 +177,8 @@ export default function App() {
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         pullRequest={currentPR}
       />
-      <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar — always rendered, only visible on conversation tab */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Sidebar — overlay, only visible on conversation tab */}
         <Sidebar
           isOpen={sidebarOpen && activeTab === 'conversation'}
           onToggle={() => setSidebarOpen(!sidebarOpen)}

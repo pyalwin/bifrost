@@ -159,10 +159,9 @@ export function Sidebar({
   return (
     <div
       className={cn(
-        'flex flex-col bg-title-bar border-r border-border overflow-hidden transition-all duration-200 shrink-0',
+        'flex flex-col bg-title-bar border-r border-border overflow-hidden transition-all duration-200 absolute top-0 left-0 h-full z-30',
         isOpen ? 'w-[260px]' : 'w-0'
       )}
-      style={{ minWidth: isOpen ? 260 : 0 }}
     >
       {isOpen && (
         <div className="flex flex-col h-full animate-fade-in">
