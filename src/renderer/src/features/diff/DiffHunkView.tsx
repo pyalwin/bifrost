@@ -53,9 +53,9 @@ function LineRow({
         {line.type === 'removed' ? '\u2212' : line.type === 'added' ? '+' : ''}
       </span>
       {html ? (
-        <span className="whitespace-pre" dangerouslySetInnerHTML={{ __html: html }} />
+        <span className="whitespace-pre-wrap break-all" dangerouslySetInnerHTML={{ __html: html }} />
       ) : (
-        <span className="whitespace-pre">{line.content}</span>
+        <span className="whitespace-pre-wrap break-all">{line.content}</span>
       )}
     </div>
   )
