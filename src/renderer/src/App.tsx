@@ -177,28 +177,28 @@ export default function App() {
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         pullRequest={currentPR}
       />
-      <div className="flex-1 flex overflow-hidden relative">
-        {/* Sidebar — overlay, only visible on conversation tab */}
-        <Sidebar
-          isOpen={sidebarOpen && activeTab === 'conversation'}
-          onToggle={() => setSidebarOpen(!sidebarOpen)}
-          onNewSession={handleNewSession}
-          onResumeSession={handleResumeSession}
-          activeSessionId={null}
-          currentBranch={claude.branch}
-          pullRequest={currentPR}
-          onCreatePR={() => setShowCreatePR(true)}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Tab bar — always full width */}
+        <MainTabBar
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          filesCount={claude.diffs.length}
+          reviewCount={reviews.length}
+          diffStats={diffStats}
         />
-        {/* Right pane — tab bar + tab content */}
-        <div className="flex-1 flex flex-col min-w-0">
-          <MainTabBar
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            filesCount={claude.diffs.length}
-            reviewCount={reviews.length}
-            diffStats={diffStats}
+        {/* Tab content area — sidebar overlays here */}
+        <div className="flex-1 flex overflow-hidden relative">
+          {/* Sidebar — absolute overlay within content area */}
+          <Sidebar
+            isOpen={sidebarOpen && activeTab === 'conversation'}
+            onToggle={() => setSidebarOpen(!sidebarOpen)}
+            onNewSession={handleNewSession}
+            onResumeSession={handleResumeSession}
+            activeSessionId={null}
+            currentBranch={claude.branch}
+            pullRequest={currentPR}
+            onCreatePR={() => setShowCreatePR(true)}
           />
-          <div className="flex-1 flex overflow-hidden">
             {/* Conversation tab */}
             {activeTab === 'conversation' && (
               <div className="flex-1 min-w-0">
@@ -255,7 +255,6 @@ export default function App() {
                 onSelectReview={(id) => { setActiveReviewId(id); setActiveTab('files') }}
               />
             )}
-          </div>
         </div>
       </div>
       {showCreatePR && (
