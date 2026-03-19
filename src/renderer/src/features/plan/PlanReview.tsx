@@ -105,8 +105,8 @@ export function PlanReview({ title, filePath, content, theme, onClose, onApprove
     <div className="h-full flex flex-col">
       {/* Toolbar */}
       <div className="h-12 px-5 bg-title-bar border-b border-border flex items-center gap-3 shrink-0">
-        <span className="text-[13px] font-semibold truncate">{title}</span>
-        <span className="text-[11px] text-muted-foreground font-mono">{shortPath}</span>
+        <span className="text-[13px] font-semibold truncate tracking-tight">{title}</span>
+        <span className="text-[10px] text-muted-foreground/60 font-mono truncate max-w-[200px]">{shortPath}</span>
         {comments.length > 0 && (
           <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-yellow-500/10 text-yellow-500">
             {comments.length} comment{comments.length !== 1 ? 's' : ''}
@@ -134,8 +134,8 @@ export function PlanReview({ title, filePath, content, theme, onClose, onApprove
 
       <div className="flex flex-1 overflow-hidden">
         {/* Plan content */}
-        <div className="flex-1 overflow-y-auto px-10 py-7">
-          <div className="max-w-[700px] mx-auto">
+        <div className="flex-1 overflow-y-auto px-8 py-8">
+          <div className="max-w-[720px] mx-auto">
             {blocks.map((block, i) => {
               const blockComments = comments.filter(c => c.blockIndex === i)
               const hasComments = blockComments.length > 0
