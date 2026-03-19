@@ -45,7 +45,10 @@ const claudeAPI = {
     ipcRenderer.invoke('claude:archive-item', type, id),
   unarchiveItem: (type: 'project' | 'session', id: string) =>
     ipcRenderer.invoke('claude:unarchive-item', type, id),
-  getArchived: () => ipcRenderer.invoke('claude:get-archived')
+  getArchived: () => ipcRenderer.invoke('claude:get-archived'),
+  listBranches: () => ipcRenderer.invoke('claude:list-branches'),
+  checkoutBranch: (branchName: string, createNew: boolean) =>
+    ipcRenderer.invoke('claude:checkout-branch', branchName, createNew),
 }
 
 if (process.contextIsolated) {

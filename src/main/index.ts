@@ -234,6 +234,35 @@ function registerIpcHandlers(): void {
       sessions: store.get('archivedSessions', []) as string[],
     }
   })
+
+  ipcMain.handle('claude:list-branches', async () => {
+    const workingDir = sessionManager.workingDir
+    if (!workingDir) return []
+    try {
+      const { execSync } = await import('child_process')
+      const output = execSync('git branch --format="%(refname:short)"', {
+        cwd: workingDir,
+        encoding: 'utf-8',
+        maxBuffer: 10 * 1024 * 1024,
+      }).trim()
+      return output ? output.split('\n') : []
+    } catch {
+      return []
+    }
+  })
+
+  ipcMain.handle('claude:checkout-branch', async (_event, branchName: string, createNew: boolean) => {
+    const workingDir = sessionManager.workingDir
+    if (!workingDir) return { success: false, error: 'No working directory' }
+    try {
+      const { execSync } = await import('child_process')
+      const cmd = createNew ? `git checkout -b ${branchName}` : `git checkout ${branchName}`
+      execSync(cmd, { cwd: workingDir, encoding: 'utf-8' })
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
 }
 
 function safeSend(channel: string, ...args: unknown[]): void {
