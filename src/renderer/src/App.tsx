@@ -289,6 +289,7 @@ export default function App() {
                 onSelectReview={setActiveReviewId}
                 onSubmitReview={handleSubmitReview}
                 selectedFile={selectedFile}
+                hasUncommitted={gitStatus.hasUncommitted}
               />
             )}
 

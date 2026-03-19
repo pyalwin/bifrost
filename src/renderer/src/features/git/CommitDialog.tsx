@@ -20,9 +20,12 @@ export function CommitDialog({ onClose, onCommitted }: Props) {
       return
     }
     window.claude.getStagedFiles()
-      .then(({ staged, unstaged }) => {
-        setStaged(staged)
-        setUnstaged(unstaged)
+      .then((result) => {
+        setStaged(result.staged)
+        setUnstaged(result.unstaged)
+        if (result.suggestedMessage && !message) {
+          setMessage(result.suggestedMessage)
+        }
       })
       .catch(() => {})
       .finally(() => setLoading(false))

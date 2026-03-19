@@ -47,6 +47,7 @@ const claudeAPI = {
   unarchiveItem: (type: 'project' | 'session', id: string) =>
     ipcRenderer.invoke('claude:unarchive-item', type, id),
   getArchived: () => ipcRenderer.invoke('claude:get-archived'),
+  getLocalDiffs: () => ipcRenderer.invoke('claude:get-local-diffs'),
   getStagedFiles: () => ipcRenderer.invoke('claude:get-staged-files'),
   stageAll: () => ipcRenderer.invoke('claude:stage-all'),
   gitCommit: (message: string) => ipcRenderer.invoke('claude:git-commit', message),

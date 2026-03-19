@@ -333,6 +333,21 @@ function registerIpcHandlers(): void {
     return baseBranches[workingDir] ?? null
   })
 
+  ipcMain.handle('claude:get-local-diffs', async () => {
+    const workingDir = sessionManager.workingDir
+    if (!workingDir) return []
+    try {
+      const { execSync } = await import('child_process')
+      const { parseUnifiedDiff } = await import('./diff-parser')
+      const unstaged = execSync('git diff', { cwd: workingDir, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 }).trim()
+      const staged = execSync('git diff --cached', { cwd: workingDir, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 }).trim()
+      const combined = (unstaged + '\n' + staged).trim()
+      return parseUnifiedDiff(combined)
+    } catch {
+      return []
+    }
+  })
+
   ipcMain.handle('claude:get-staged-files', async () => {
     const workingDir = sessionManager.workingDir
     if (!workingDir) return { staged: [], unstaged: [] }
@@ -349,9 +364,21 @@ function registerIpcHandlers(): void {
         if (x !== ' ' && x !== '?') staged.push(file)
         if (y !== ' ' || x === '?') unstaged.push(file)
       }
-      return { staged, unstaged }
+      // Generate a suggested commit message
+      const allFiles = [...new Set([...staged, ...unstaged])]
+      const dirs = [...new Set(allFiles.map(f => f.split('/').slice(0, -1).join('/')))]
+      let suggestedMessage = ''
+      if (allFiles.length === 1) {
+        suggestedMessage = `update ${allFiles[0].split('/').pop()}`
+      } else if (dirs.length === 1 && dirs[0]) {
+        suggestedMessage = `update ${allFiles.length} files in ${dirs[0]}`
+      } else {
+        suggestedMessage = `update ${allFiles.length} files`
+      }
+
+      return { staged, unstaged, suggestedMessage }
     } catch {
-      return { staged: [], unstaged: [] }
+      return { staged: [], unstaged: [], suggestedMessage: '' }
     }
   })
 
