@@ -38,7 +38,12 @@ const claudeAPI = {
     ipcRenderer.on('claude:history', handler)
     return () => ipcRenderer.removeListener('claude:history', handler)
   },
-  selectDirectory: () => ipcRenderer.invoke('claude:select-directory')
+  selectDirectory: () => ipcRenderer.invoke('claude:select-directory'),
+  archiveItem: (type: 'project' | 'session', id: string) =>
+    ipcRenderer.invoke('claude:archive-item', type, id),
+  unarchiveItem: (type: 'project' | 'session', id: string) =>
+    ipcRenderer.invoke('claude:unarchive-item', type, id),
+  getArchived: () => ipcRenderer.invoke('claude:get-archived')
 }
 
 if (process.contextIsolated) {

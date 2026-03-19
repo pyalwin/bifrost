@@ -114,6 +114,9 @@ export interface ClaudeAPI {
   onDiffUpdate(callback: (diffs: DiffFileData[]) => void): () => void
   onBranchChange(callback: (branch: string) => void): () => void
   selectDirectory(): Promise<string | null>
+  archiveItem(type: 'project' | 'session', id: string): Promise<void>
+  unarchiveItem(type: 'project' | 'session', id: string): Promise<void>
+  getArchived(): Promise<{ projects: string[]; sessions: string[] }>
 }
 
 declare global {
