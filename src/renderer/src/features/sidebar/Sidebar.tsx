@@ -157,14 +157,9 @@ export function Sidebar({
   }
 
   return (
-    <div
-      className={cn(
-        'flex flex-col bg-title-bar border-r border-border overflow-hidden transition-all duration-200 absolute top-0 left-0 h-full z-30',
-        isOpen ? 'w-[260px]' : 'w-0'
-      )}
-    >
-      {isOpen && (
-        <div className="flex flex-col h-full animate-fade-in">
+    <div className="flex flex-col h-full overflow-hidden">
+      {(
+        <div className="flex flex-col h-full">
           {/* Nav items */}
           <div className="px-3 pt-3 pb-1 space-y-0.5 shrink-0">
             <button

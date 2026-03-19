@@ -5,6 +5,7 @@ import { TitleBar } from './features/title-bar/TitleBar'
 import { Sidebar } from './features/sidebar/Sidebar'
 import { ChatPanel } from './features/chat/ChatPanel'
 import { FilesChangedView } from './features/diff/FilesChangedView'
+import { FileTree } from './features/diff/FileTree'
 import { MainTabBar, type TabId } from './features/tabs/MainTabBar'
 import type { Review, PullRequest, PlanComment } from './types/index'
 import { CreatePRDialog } from './features/pr/CreatePRDialog'
@@ -27,6 +28,7 @@ export default function App() {
   const [prCreating, setPrCreating] = useState(false)
   const [prError, setPrError] = useState<string | null>(null)
   const [planReview, setPlanReview] = useState<{ title: string; filePath: string; content: string } | null>(null)
+  const [selectedFile, setSelectedFile] = useState<string | null>(null)
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -177,57 +179,76 @@ export default function App() {
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         pullRequest={currentPR}
       />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Tab bar — always full width */}
-        <MainTabBar
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          filesCount={claude.diffs.length}
-          reviewCount={reviews.length}
-          diffStats={diffStats}
-        />
-        {/* Tab content area — sidebar overlays here */}
-        <div className="flex-1 flex overflow-hidden relative">
-          {/* Sidebar — absolute overlay within content area */}
-          <Sidebar
-            isOpen={sidebarOpen && activeTab === 'conversation'}
-            onToggle={() => setSidebarOpen(!sidebarOpen)}
-            onNewSession={handleNewSession}
-            onResumeSession={handleResumeSession}
-            activeSessionId={null}
-            currentBranch={claude.branch}
-            pullRequest={currentPR}
-            onCreatePR={() => setShowCreatePR(true)}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left sidebar area — fixed width, content changes per tab */}
+        {sidebarOpen && (
+          <div className="w-[260px] shrink-0 bg-title-bar border-r border-border overflow-hidden">
+            {activeTab === 'conversation' && (
+              <Sidebar
+                isOpen={true}
+                onToggle={() => setSidebarOpen(!sidebarOpen)}
+                onNewSession={handleNewSession}
+                onResumeSession={handleResumeSession}
+                activeSessionId={null}
+                currentBranch={claude.branch}
+                pullRequest={currentPR}
+                onCreatePR={() => setShowCreatePR(true)}
+              />
+            )}
+            {activeTab === 'files' && (
+              <FileTree
+                files={claude.diffs}
+                selectedFile={selectedFile}
+                onSelectFile={setSelectedFile}
+              />
+            )}
+            {(activeTab === 'commits' || activeTab === 'reviews') && (
+              <div className="flex items-center justify-center h-full text-muted-foreground/30 text-[11px]">
+                No sidebar for this view
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Right work pane — tab bar + content, always in the same position */}
+        <div className="flex-1 flex flex-col min-w-0">
+          <MainTabBar
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            filesCount={claude.diffs.length}
+            reviewCount={reviews.length}
+            diffStats={diffStats}
           />
+          <div className="flex-1 overflow-hidden">
             {/* Conversation tab */}
             {activeTab === 'conversation' && (
-              <div className="flex-1 min-w-0">
-              {planReview ? (
-                <PlanReview
-                  title={planReview.title}
-                  filePath={planReview.filePath}
-                  content={planReview.content}
-                  theme={theme}
-                  onClose={() => setPlanReview(null)}
-                  onApprove={handlePlanApprove}
-                  onRevise={handlePlanRevise}
-                />
-              ) : (
-                <ChatPanel
-                  messages={claude.messages}
-                  pendingApproval={claude.pendingApproval}
-                  onApprove={(id) => claude.approveRequest(id)}
-                  onDeny={(id) => claude.denyRequest(id)}
-                  onSend={claude.sendMessage}
-                  onAnswerQuestion={claude.answerQuestion}
-                  onOpenFile={openPlanReview}
-                  theme={theme}
-                  disabled={claude.connectionState !== 'active'}
-                  model={model}
-                  onModelChange={(m) => { setModel(m); localStorage.setItem('bifrost-model', m) }}
-                />
-              )}
-            </div>
+              <div className="h-full">
+                {planReview ? (
+                  <PlanReview
+                    title={planReview.title}
+                    filePath={planReview.filePath}
+                    content={planReview.content}
+                    theme={theme}
+                    onClose={() => setPlanReview(null)}
+                    onApprove={handlePlanApprove}
+                    onRevise={handlePlanRevise}
+                  />
+                ) : (
+                  <ChatPanel
+                    messages={claude.messages}
+                    pendingApproval={claude.pendingApproval}
+                    onApprove={(id) => claude.approveRequest(id)}
+                    onDeny={(id) => claude.denyRequest(id)}
+                    onSend={claude.sendMessage}
+                    onAnswerQuestion={claude.answerQuestion}
+                    onOpenFile={openPlanReview}
+                    theme={theme}
+                    disabled={claude.connectionState !== 'active'}
+                    model={model}
+                    onModelChange={(m) => { setModel(m); localStorage.setItem('bifrost-model', m) }}
+                  />
+                )}
+              </div>
             )}
 
             {/* Files Changed tab */}
@@ -255,6 +276,7 @@ export default function App() {
                 onSelectReview={(id) => { setActiveReviewId(id); setActiveTab('files') }}
               />
             )}
+          </div>
         </div>
       </div>
       {showCreatePR && (
