@@ -178,6 +178,7 @@ export default function App() {
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         pullRequest={currentPR}
+        openDisabled={!claude.projectPath}
       />
       <div className="flex-1 flex overflow-hidden">
         {/* Left sidebar area — fixed width, content changes per tab */}
