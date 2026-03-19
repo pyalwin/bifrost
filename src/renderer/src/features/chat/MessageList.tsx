@@ -7,7 +7,7 @@ import { useAutoScroll } from '../../hooks/use-auto-scroll'
 interface Props {
   messages: Message[]
   theme: 'light' | 'dark'
-  onSend?: (text: string) => void
+  onSend?: (text: string, images?: Array<{ base64: string; mediaType: string; name: string }>) => void
   onAnswerQuestion?: (toolUseId: string, answer: string) => void
 }
 

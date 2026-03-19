@@ -10,7 +10,7 @@ interface UseClaudeReturn {
   pendingApproval: { id: string; toolName: string; input: Record<string, unknown> } | null
   startSession: (workingDir: string) => Promise<void>
   resumeSession: (sessionId: string, workingDir: string) => Promise<void>
-  sendMessage: (text: string) => void
+  sendMessage: (text: string, images?: Array<{ base64: string; mediaType: string; name: string }>) => void
   answerQuestion: (toolUseId: string, answer: string) => void
   cancelTurn: () => void
   approveRequest: (id: string) => void
@@ -364,7 +364,7 @@ export function useClaude(): UseClaudeReturn {
     return () => { unsubMessage(); unsubState(); unsubDiff(); unsubBranch(); unsubHistory?.() }
   }, [startTurn, finalizeTurn, updateCurrentMessage])
 
-  const sendMessage = useCallback((text: string) => {
+  const sendMessage = useCallback((text: string, images?: Array<{ base64: string; mediaType: string; name: string }>) => {
     // Finalize any in-progress turn before starting a new user message
     if (isInTurn.current) finalizeTurn()
 
@@ -373,12 +373,13 @@ export function useClaude(): UseClaudeReturn {
       id: `msg-${++messageIdCounter.current}`,
       role: 'user',
       content: text,
+      images,
     }])
 
     // Immediately start the assistant turn so thinking indicator shows instantly
     startTurn()
 
-    window.claude?.sendMessage(text)
+    window.claude?.sendMessage(text, images)
   }, [finalizeTurn, startTurn])
 
   const answerQuestion = useCallback((toolUseId: string, answer: string) => {
