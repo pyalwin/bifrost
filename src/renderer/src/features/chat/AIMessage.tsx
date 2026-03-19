@@ -9,6 +9,7 @@ interface Props {
   message: Message
   theme: 'light' | 'dark'
   onAnswerQuestion?: (toolUseId: string, answer: string) => void
+  onOpenFile?: (filePath: string) => void
 }
 
 // Two-word combo generator inspired by Claude Code CLI's quirky progress text.
@@ -70,7 +71,7 @@ function WorkingShimmer() {
   )
 }
 
-export function AIMessage({ message, theme, onAnswerQuestion }: Props) {
+export function AIMessage({ message, theme, onAnswerQuestion, onOpenFile }: Props) {
   const tools = message.tools ?? []
   const hasContent = !!message.content
   const isThinkingOnly = message.isThinking && !hasContent && tools.length === 0 && !message.question
@@ -103,7 +104,7 @@ export function AIMessage({ message, theme, onAnswerQuestion }: Props) {
       {/* Response text — markdown rendered, fades in */}
       {hasContent && (
         <div className="text-sm leading-[1.65] text-foreground animate-fade-in">
-          <MarkdownRenderer content={message.content} theme={theme} />
+          <MarkdownRenderer content={message.content} theme={theme} onOpenFile={onOpenFile} />
           {message.isStreaming && <StreamingIndicator />}
         </div>
       )}

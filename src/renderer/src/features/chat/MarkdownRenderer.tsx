@@ -6,9 +6,10 @@ import { MermaidBlock } from './MermaidBlock'
 interface Props {
   content: string
   theme: 'light' | 'dark'
+  onOpenFile?: (filePath: string) => void
 }
 
-export function MarkdownRenderer({ content, theme }: Props) {
+export function MarkdownRenderer({ content, theme, onOpenFile }: Props) {
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
@@ -20,6 +21,21 @@ export function MarkdownRenderer({ content, theme }: Props) {
             const lang = match[1]
             if (lang === 'mermaid') return <MermaidBlock code={code} theme={theme} />
             return <CodeBlock code={code} language={lang} theme={theme} />
+          }
+          // Check if inline code looks like a clickable file path
+          const text = String(children)
+          const isFilePath = onOpenFile && /\.(md|txt|json|ya?ml|toml)$/.test(text) && text.includes('/')
+          if (isFilePath) {
+            return (
+              <code
+                className="px-1.5 py-0.5 rounded bg-muted text-[13px] font-mono text-blue-400 cursor-pointer hover:underline"
+                onClick={() => onOpenFile(text)}
+                role="button"
+                title={`Open ${text}`}
+              >
+                {children}
+              </code>
+            )
           }
           return (
             <code

@@ -212,6 +212,7 @@ export default function App() {
                 onDeny={(id) => claude.denyRequest(id)}
                 onSend={claude.sendMessage}
                 onAnswerQuestion={claude.answerQuestion}
+                onOpenFile={openPlanReview}
                 theme={theme}
                 disabled={claude.connectionState !== 'active'}
                 model={model}

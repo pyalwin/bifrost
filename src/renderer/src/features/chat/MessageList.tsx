@@ -9,9 +9,10 @@ interface Props {
   theme: 'light' | 'dark'
   onSend?: (text: string, images?: Array<{ base64: string; mediaType: string; name: string }>) => void
   onAnswerQuestion?: (toolUseId: string, answer: string) => void
+  onOpenFile?: (filePath: string) => void
 }
 
-export function MessageList({ messages, theme, onSend, onAnswerQuestion }: Props) {
+export function MessageList({ messages, theme, onSend, onAnswerQuestion, onOpenFile }: Props) {
   const { ref, onScroll } = useAutoScroll<HTMLDivElement>([messages.length])
 
   if (messages.length === 0) return <ChatEmptyState onSuggestionClick={onSend} />
@@ -23,7 +24,7 @@ export function MessageList({ messages, theme, onSend, onAnswerQuestion }: Props
           msg.role === 'user' ? (
             <UserMessage key={msg.id} content={msg.content} images={msg.images} />
           ) : (
-            <AIMessage key={msg.id} message={msg} theme={theme} onAnswerQuestion={onAnswerQuestion} />
+            <AIMessage key={msg.id} message={msg} theme={theme} onAnswerQuestion={onAnswerQuestion} onOpenFile={onOpenFile} />
           )
         )}
       </div>

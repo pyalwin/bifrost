@@ -10,6 +10,7 @@ interface Props {
   onDeny: (id: string) => void
   onSend: (text: string, images?: Array<{ base64: string; mediaType: string; name: string }>) => void
   onAnswerQuestion?: (toolUseId: string, answer: string) => void
+  onOpenFile?: (filePath: string) => void
   theme: 'light' | 'dark'
   disabled: boolean
   model: string
@@ -23,6 +24,7 @@ export function ChatPanel({
   onDeny,
   onSend,
   onAnswerQuestion,
+  onOpenFile,
   theme,
   disabled,
   model,
@@ -38,7 +40,7 @@ export function ChatPanel({
           onDeny={() => onDeny(pendingApproval.id)}
         />
       )}
-      <MessageList messages={messages} theme={theme} onSend={onSend} onAnswerQuestion={onAnswerQuestion} />
+      <MessageList messages={messages} theme={theme} onSend={onSend} onAnswerQuestion={onAnswerQuestion} onOpenFile={onOpenFile} />
       <InputBox onSend={onSend} disabled={disabled} model={model} onModelChange={onModelChange} />
     </div>
   )
