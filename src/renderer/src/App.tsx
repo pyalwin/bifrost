@@ -4,8 +4,7 @@ import { useClaude } from './hooks/use-claude'
 import { TitleBar } from './features/title-bar/TitleBar'
 import { Sidebar } from './features/sidebar/Sidebar'
 import { ChatPanel } from './features/chat/ChatPanel'
-import { DiffPanel } from './features/diff/DiffPanel'
-import { ReviewTabsBar } from './features/diff/ReviewTabsBar'
+import { FilesChangedView } from './features/diff/FilesChangedView'
 import { MainTabBar, type TabId } from './features/tabs/MainTabBar'
 import type { Review, PullRequest, PlanComment } from './types/index'
 import { CreatePRDialog } from './features/pr/CreatePRDialog'
@@ -231,17 +230,14 @@ export default function App() {
 
         {/* Files Changed tab */}
         {activeTab === 'files' && (
-          <div className="flex-1 flex flex-col">
-            <ReviewTabsBar
-              reviews={reviews}
-              activeReviewId={activeReviewId}
-              onSelectReview={setActiveReviewId}
-              onStartNewReview={() => {}}
-            />
-            <div className="flex-1 overflow-hidden">
-              <DiffPanel files={claude.diffs} theme={theme} onSubmitReview={handleSubmitReview} />
-            </div>
-          </div>
+          <FilesChangedView
+            files={claude.diffs}
+            theme={theme}
+            reviews={reviews}
+            activeReviewId={activeReviewId}
+            onSelectReview={setActiveReviewId}
+            onSubmitReview={handleSubmitReview}
+          />
         )}
 
         {/* Commits tab */}
