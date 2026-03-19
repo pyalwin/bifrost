@@ -8,8 +8,9 @@ import { DiffPanel } from './features/diff/DiffPanel'
 import { ReviewTabsBar } from './features/diff/ReviewTabsBar'
 import { cn } from './lib/utils'
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from './components/ui/resizable'
-import type { Review, PullRequest } from './types/index'
+import type { Review, PullRequest, PlanComment } from './types/index'
 import { CreatePRDialog } from './features/pr/CreatePRDialog'
+import { PlanReview } from './features/plan/PlanReview'
 
 export default function App() {
   const { theme, toggleTheme } = useTheme()
@@ -25,6 +26,7 @@ export default function App() {
   const [showCreatePR, setShowCreatePR] = useState(false)
   const [prCreating, setPrCreating] = useState(false)
   const [prError, setPrError] = useState<string | null>(null)
+  const [planReview, setPlanReview] = useState<{ title: string; filePath: string; content: string } | null>(null)
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -126,6 +128,36 @@ export default function App() {
     }
   }, [])
 
+  const openPlanReview = useCallback(async (filePath: string) => {
+    const content = await window.claude?.loadPlanFile(filePath)
+    if (content) {
+      const title = filePath.split('/').pop()?.replace('.md', '').replace(/[-_]/g, ' ').replace(/^\d{4}-\d{2}-\d{2}-?/, '').replace(/^\w/, c => c.toUpperCase()) ?? 'Plan'
+      setPlanReview({ title, filePath, content })
+    }
+  }, [])
+
+  const handlePlanApprove = useCallback((comments: PlanComment[]) => {
+    let message = 'The plan has been approved. Please proceed with implementation.'
+    if (comments.length > 0) {
+      message += '\n\nAdditional comments to consider:\n'
+      for (const c of comments) {
+        message += `- ${c.text}\n`
+      }
+    }
+    setPlanReview(null)
+    claude.sendMessage(message)
+  }, [claude])
+
+  const handlePlanRevise = useCallback((comments: PlanComment[]) => {
+    let message = 'Please revise the plan based on these review comments:\n\n'
+    for (const c of comments) {
+      message += `- ${c.text}\n`
+    }
+    message += '\nUpdate the plan file and re-open it for review.'
+    setPlanReview(null)
+    claude.sendMessage(message)
+  }, [claude])
+
   // Compute diff stats for title bar — always show so user can toggle the pane
   const diffStats = {
     additions: claude.diffs.reduce((sum, f) => sum + f.additions, 0),
@@ -162,18 +194,30 @@ export default function App() {
         <ResizablePanelGroup direction="horizontal">
           {/* Chat panel */}
           <ResizablePanel defaultSize={diffOpen ? 55 : 100} minSize={30}>
-            <ChatPanel
-              messages={claude.messages}
-              pendingApproval={claude.pendingApproval}
-              onApprove={(id) => claude.approveRequest(id)}
-              onDeny={(id) => claude.denyRequest(id)}
-              onSend={claude.sendMessage}
-              onAnswerQuestion={claude.answerQuestion}
-              theme={theme}
-              disabled={claude.connectionState !== 'active'}
-              model={model}
-              onModelChange={(m) => { setModel(m); localStorage.setItem('bifrost-model', m) }}
-            />
+            {planReview ? (
+              <PlanReview
+                title={planReview.title}
+                filePath={planReview.filePath}
+                content={planReview.content}
+                theme={theme}
+                onClose={() => setPlanReview(null)}
+                onApprove={handlePlanApprove}
+                onRevise={handlePlanRevise}
+              />
+            ) : (
+              <ChatPanel
+                messages={claude.messages}
+                pendingApproval={claude.pendingApproval}
+                onApprove={(id) => claude.approveRequest(id)}
+                onDeny={(id) => claude.denyRequest(id)}
+                onSend={claude.sendMessage}
+                onAnswerQuestion={claude.answerQuestion}
+                theme={theme}
+                disabled={claude.connectionState !== 'active'}
+                model={model}
+                onModelChange={(m) => { setModel(m); localStorage.setItem('bifrost-model', m) }}
+              />
+            )}
           </ResizablePanel>
 
           {/* Diff panel — resizable */}
