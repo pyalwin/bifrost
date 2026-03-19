@@ -426,8 +426,17 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('claude:load-plan-file', async (_event, filePath: string) => {
     try {
-      const { readFileSync } = await import('fs')
-      return readFileSync(filePath, 'utf-8')
+      const { readFileSync, existsSync } = await import('fs')
+      const { join: joinPath, isAbsolute } = await import('path')
+
+      // Resolve relative paths against the working directory
+      let resolved = filePath
+      if (!isAbsolute(filePath) && sessionManager.workingDir) {
+        resolved = joinPath(sessionManager.workingDir, filePath)
+      }
+
+      if (!existsSync(resolved)) return null
+      return readFileSync(resolved, 'utf-8')
     } catch {
       return null
     }
