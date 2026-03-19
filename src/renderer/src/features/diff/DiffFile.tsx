@@ -17,6 +17,7 @@ interface Props {
 
 export function DiffFile({ file, theme, reviewMode, reviewComments, commentingLine, onLineClick, onAddComment, onCancelComment, onRemoveComment }: Props) {
   const [collapsed, setCollapsed] = useState(false)
+  const [viewed, setViewed] = useState(false)
   const [comments, setComments] = useState<InlineComment[]>(file.comments)
 
   const commentsByLine = new Map<number, InlineComment[]>()
@@ -62,9 +63,9 @@ export function DiffFile({ file, theme, reviewMode, reviewComments, commentingLi
         additions={file.additions}
         deletions={file.deletions}
         collapsed={collapsed}
+        viewed={viewed}
         onToggleCollapse={() => setCollapsed(!collapsed)}
-        onAccept={() => console.log('accept', file.filename)}
-        onReject={() => console.log('reject', file.filename)}
+        onToggleViewed={() => setViewed(!viewed)}
       />
       {!collapsed && (
         <DiffHunkView

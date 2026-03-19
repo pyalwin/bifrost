@@ -72,8 +72,6 @@ export function DiffPanel({ files, theme, onSubmitReview }: Props) {
         fileCount={files.length}
         additions={totalAdditions}
         deletions={totalDeletions}
-        onAcceptAll={() => console.log('accept all')}
-        onRejectAll={() => console.log('reject all')}
         reviewMode={reviewMode}
         reviewCommentCount={reviewComments.length}
         onStartReview={() => setReviewMode(true)}

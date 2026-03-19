@@ -2,8 +2,6 @@ interface Props {
   fileCount: number
   additions: number
   deletions: number
-  onAcceptAll: () => void
-  onRejectAll: () => void
   reviewMode: boolean
   reviewCommentCount: number
   onStartReview: () => void
@@ -12,7 +10,7 @@ interface Props {
 }
 
 export function DiffSummaryHeader({
-  fileCount, additions, deletions, onAcceptAll, onRejectAll,
+  fileCount, additions, deletions,
   reviewMode, reviewCommentCount, onStartReview, onSubmitReview, onCancelReview
 }: Props) {
   return (
@@ -22,16 +20,12 @@ export function DiffSummaryHeader({
       <span className="text-diff-removed-text text-[13px] font-medium">-{deletions}</span>
       <span className="ml-auto flex gap-2 items-center">
         {!reviewMode ? (
-          <>
-            <button
-              onClick={onStartReview}
-              className="flex items-center gap-1.5 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-[12px] font-medium rounded-md transition-colors"
-            >
-              Start Review
-            </button>
-            <button onClick={onRejectAll} className="text-muted-foreground hover:text-foreground text-base transition-colors">×</button>
-            <button onClick={onAcceptAll} className="text-muted-foreground hover:text-foreground text-base transition-colors">✓</button>
-          </>
+          <button
+            onClick={onStartReview}
+            className="flex items-center gap-1.5 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-[12px] font-medium rounded-md transition-colors"
+          >
+            Start Review
+          </button>
         ) : (
           <>
             {reviewCommentCount > 0 && (
