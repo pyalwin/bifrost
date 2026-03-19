@@ -57,9 +57,6 @@ function BranchRow({
         }
         <GitBranch className="w-3 h-3 shrink-0" />
         <span className="truncate">{branch.name}</span>
-        {branch.baseBranch && isExpanded && (
-          <span className="text-[10px] text-muted-foreground/40 ml-auto shrink-0">→ {branch.baseBranch}</span>
-        )}
         {!isExpanded && (
           <span className="text-[10px] text-muted-foreground/30 ml-auto shrink-0">
             {sessionCount}
