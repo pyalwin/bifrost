@@ -256,10 +256,16 @@ export function useClaude(): UseClaudeReturn {
             }))
           }
 
-          // Mark any remaining pending tools as success
+          // Mark any remaining pending tools (and their children) as success
           updateCurrentMessage(m => ({
             ...m,
-            tools: m.tools?.map(t => t.status === 'pending' ? { ...t, status: 'success' as const } : t),
+            tools: m.tools?.map(t => ({
+              ...t,
+              status: t.status === 'pending' ? 'success' as const : t.status,
+              children: t.children?.map(c =>
+                c.status === 'pending' ? { ...c, status: 'success' as const } : c
+              ),
+            })),
           }))
 
           finalizeTurn()
