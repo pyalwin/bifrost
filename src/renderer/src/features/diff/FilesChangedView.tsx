@@ -9,9 +9,18 @@ interface Props {
   activeReviewId: string | null
   onSelectReview: (id: string) => void
   onSubmitReview: (review: Review) => void
+  selectedFile?: string | null
 }
 
-export function FilesChangedView({ files, theme, reviews, activeReviewId, onSelectReview, onSubmitReview }: Props) {
+export function FilesChangedView({ files, theme, reviews, activeReviewId, onSelectReview, onSubmitReview, selectedFile }: Props) {
+  // Sort files alphabetically by path to match the file tree order
+  const sortedFiles = [...files].sort((a, b) => a.filename.localeCompare(b.filename))
+
+  // Filter to selected file if one is chosen
+  const displayFiles = selectedFile
+    ? sortedFiles.filter(f => f.filename === selectedFile)
+    : sortedFiles
+
   return (
     <div className="h-full flex flex-col">
       <ReviewTabsBar
@@ -21,7 +30,7 @@ export function FilesChangedView({ files, theme, reviews, activeReviewId, onSele
         onStartNewReview={() => {}}
       />
       <div className="flex-1 overflow-hidden">
-        <DiffPanel files={files} theme={theme} onSubmitReview={onSubmitReview} />
+        <DiffPanel files={displayFiles} theme={theme} onSubmitReview={onSubmitReview} />
       </div>
     </div>
   )

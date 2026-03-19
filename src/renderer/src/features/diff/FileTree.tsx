@@ -46,7 +46,8 @@ function FolderRow({ node, selectedFile, onSelectFile, depth = 0 }: {
   node: FolderNode; selectedFile: string | null; onSelectFile: (f: string) => void; depth?: number
 }) {
   const [expanded, setExpanded] = useState(true)
-  const children = Array.from(node.children.values())
+  const children = Array.from(node.children.values()).sort((a, b) => a.name.localeCompare(b.name))
+  const sortedFiles = [...node.files].sort((a, b) => a.filename.localeCompare(b.filename))
 
   return (
     <div>
@@ -66,7 +67,7 @@ function FolderRow({ node, selectedFile, onSelectFile, depth = 0 }: {
           {children.map(child => (
             <FolderRow key={child.path} node={child} selectedFile={selectedFile} onSelectFile={onSelectFile} depth={node.name ? depth + 1 : depth} />
           ))}
-          {node.files.map(file => {
+          {sortedFiles.map(file => {
             const isSelected = file.filename === selectedFile
             const isAdded = file.deletions === 0 && file.additions > 0
             const isDeleted = file.additions === 0 && file.deletions > 0
@@ -104,7 +105,7 @@ export function FileTree({ files, selectedFile, onSelectFile }: Props) {
   const tree = buildTree(filteredFiles)
 
   return (
-    <div className="w-[240px] bg-title-bar border-r border-border flex flex-col shrink-0">
+    <div className="h-full flex flex-col">
       <div className="p-2 border-b border-border">
         <div className="flex items-center gap-2 px-2 py-1.5 bg-background border border-border rounded-md">
           <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />

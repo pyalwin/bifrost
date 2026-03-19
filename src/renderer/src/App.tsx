@@ -183,7 +183,7 @@ export default function App() {
       <div className="flex-1 flex overflow-hidden">
         {/* Left sidebar area — fixed width, content changes per tab */}
         {sidebarOpen && (
-          <div className="w-[260px] shrink-0 bg-title-bar border-r border-border overflow-hidden">
+          <div className="w-[260px] shrink-0 bg-title-bar border-r border-border overflow-hidden flex flex-col">
             {activeTab === 'conversation' && (
               <Sidebar
                 isOpen={true}
@@ -264,6 +264,7 @@ export default function App() {
                 activeReviewId={activeReviewId}
                 onSelectReview={setActiveReviewId}
                 onSubmitReview={handleSubmitReview}
+                selectedFile={selectedFile}
               />
             )}
 
