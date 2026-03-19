@@ -29,8 +29,9 @@ mac:
     - NSDocumentsFolderUsageDescription: Bifrost needs access to your project files.
     - NSDownloadsFolderUsageDescription: Bifrost needs access to download files.
   notarize: false
-  hardenedRuntime: true
+  hardenedRuntime: false
   gatekeeperAssess: false
+  identity: null
 dmg:
   artifactName: Bifrost-${version}-${arch}.${ext}
   icon: build/icon.icns
