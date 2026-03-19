@@ -218,6 +218,7 @@ export default function App() {
             filesCount={claude.diffs.length}
             reviewCount={reviews.length}
             diffStats={diffStats}
+            disabled={!claude.projectPath}
           />
           <div className="flex-1 overflow-hidden">
             {/* Conversation tab */}

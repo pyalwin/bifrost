@@ -18,13 +18,12 @@ interface Props {
   reviewCount?: number
   conversationCount?: number
   diffStats?: { additions: number; deletions: number }
-  onStartReview?: () => void
-  reviewMode?: boolean
+  disabled?: boolean
 }
 
 export function MainTabBar({
   activeTab, onTabChange, filesCount = 0, commitCount = 0, reviewCount = 0,
-  conversationCount = 0, diffStats,
+  conversationCount = 0, diffStats, disabled = false,
 }: Props) {
   const tabs: TabDef[] = [
     { id: 'conversation', label: 'Conversation', icon: MessageSquare, count: conversationCount || undefined },
@@ -35,15 +34,20 @@ export function MainTabBar({
 
   return (
     <div className="flex items-center bg-title-bar border-b border-border px-4 shrink-0">
-      {tabs.map(tab => (
+      {tabs.map(tab => {
+        const isDisabled = disabled && tab.id !== 'conversation'
+        return (
         <button
           key={tab.id}
-          onClick={() => onTabChange(tab.id)}
+          onClick={() => !isDisabled && onTabChange(tab.id)}
+          disabled={isDisabled}
           className={cn(
             'flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-medium border-b-2 transition-colors',
-            tab.id === activeTab
-              ? 'text-foreground border-foreground'
-              : 'text-muted-foreground border-transparent hover:text-foreground'
+            isDisabled
+              ? 'text-muted-foreground/30 border-transparent cursor-not-allowed'
+              : tab.id === activeTab
+                ? 'text-foreground border-foreground'
+                : 'text-muted-foreground border-transparent hover:text-foreground'
           )}
         >
           <tab.icon className="w-[14px] h-[14px]" />
@@ -59,7 +63,8 @@ export function MainTabBar({
             </span>
           )}
         </button>
-      ))}
+        )
+      })}
       <div className="ml-auto flex items-center gap-3">
         {diffStats && (diffStats.additions > 0 || diffStats.deletions > 0) && (
           <span className="text-[12px] font-mono">
