@@ -182,8 +182,7 @@ function registerIpcHandlers(): void {
     const key = type === 'project' ? 'archivedProjects' : 'archivedSessions'
     const archived = (store.get(key, []) as string[])
     if (!archived.includes(id)) {
-      archived.push(id)
-      store.set(key, archived)
+      store.set(key, [...archived, id])
     }
   })
 
