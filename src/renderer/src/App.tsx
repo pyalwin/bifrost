@@ -6,6 +6,7 @@ import { Sidebar } from './features/sidebar/Sidebar'
 import { ChatPanel } from './features/chat/ChatPanel'
 import { DiffPanel } from './features/diff/DiffPanel'
 import { cn } from './lib/utils'
+import type { Review } from './types/index'
 
 export default function App() {
   const { theme, toggleTheme } = useTheme()
@@ -46,6 +47,30 @@ export default function App() {
       console.error('[App] Failed to start session:', message)
       setSessionError(message)
     }
+  }, [claude])
+
+  const handleSubmitReview = useCallback(async (review: Review) => {
+    const workingDir = claude.projectPath
+    if (!workingDir) return
+
+    // Build the review context message
+    const commentsByFile = new Map<string, typeof review.comments>()
+    for (const c of review.comments) {
+      const existing = commentsByFile.get(c.filename) ?? []
+      commentsByFile.set(c.filename, [...existing, c])
+    }
+
+    let message = `Please address the following code review comments:\n\n`
+    for (const [filename, comments] of commentsByFile) {
+      message += `**${filename}:**\n`
+      for (const c of comments) {
+        message += `- Line ${c.lineNumber}: ${c.text}\n`
+      }
+      message += '\n'
+    }
+    message += `Please fix each issue and explain what you changed.`
+
+    await claude.startReviewSession(workingDir, message)
   }, [claude])
 
   const handleResumeSession = useCallback(async (sessionId: string, workingDir: string) => {
@@ -109,7 +134,7 @@ export default function App() {
           "border-l border-border transition-all duration-300 overflow-hidden",
           diffOpen ? "w-[45%]" : "w-0"
         )}>
-          {diffOpen && <DiffPanel files={claude.diffs} theme={theme} />}
+          {diffOpen && <DiffPanel files={claude.diffs} theme={theme} onSubmitReview={handleSubmitReview} />}
         </div>
       </div>
     </div>

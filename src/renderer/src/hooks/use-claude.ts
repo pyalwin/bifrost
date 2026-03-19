@@ -9,6 +9,7 @@ interface UseClaudeReturn {
   projectPath: string
   pendingApproval: { id: string; toolName: string; input: Record<string, unknown> } | null
   startSession: (workingDir: string) => Promise<void>
+  startReviewSession: (workingDir: string, reviewMessage: string) => Promise<void>
   resumeSession: (sessionId: string, workingDir: string) => Promise<void>
   sendMessage: (text: string, images?: Array<{ base64: string; mediaType: string; name: string }>) => void
   answerQuestion: (toolUseId: string, answer: string) => void
@@ -403,6 +404,23 @@ export function useClaude(): UseClaudeReturn {
     window.claude?.sendMessage(answer)
   }, [updateCurrentMessage])
 
+  const startReviewSession = useCallback(async (workingDir: string, reviewMessage: string) => {
+    setMessages([])
+    setDiffs([])
+    setProjectPath(workingDir)
+    currentTurnId.current = null
+    isInTurn.current = false
+
+    try {
+      await window.claude?.startSession(workingDir)
+      // Send the review context as the first message after connection
+      setTimeout(() => sendMessage(reviewMessage), 500)
+    } catch (err) {
+      console.error('[useClaude] startReviewSession failed:', err)
+      setConnectionState('idle')
+    }
+  }, [sendMessage])
+
   const startSession = useCallback(async (workingDir: string) => {
     setMessages([])
     setDiffs([])
@@ -450,6 +468,6 @@ export function useClaude(): UseClaudeReturn {
 
   return {
     connectionState, messages, diffs, branch, projectPath, pendingApproval,
-    startSession, resumeSession, sendMessage, answerQuestion, cancelTurn, approveRequest, denyRequest,
+    startSession, startReviewSession, resumeSession, sendMessage, answerQuestion, cancelTurn, approveRequest, denyRequest,
   }
 }
