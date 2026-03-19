@@ -12,6 +12,7 @@ import { CreatePRDialog } from './features/pr/CreatePRDialog'
 import { PlanReview } from './features/plan/PlanReview'
 import { CommitsView } from './features/commits/CommitsView'
 import { ReviewsView } from './features/reviews/ReviewsView'
+import { CommitDialog } from './features/git/CommitDialog'
 
 export default function App() {
   const { theme, toggleTheme } = useTheme()
@@ -33,6 +34,7 @@ export default function App() {
   const [prError, setPrError] = useState<string | null>(null)
   const [planReview, setPlanReview] = useState<{ title: string; filePath: string; content: string } | null>(null)
   const [selectedFile, setSelectedFile] = useState<string | null>(null)
+  const [showCommitDialog, setShowCommitDialog] = useState(false)
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -200,6 +202,7 @@ export default function App() {
         openDisabled={!claude.projectPath}
         gitStatus={gitStatus}
         onCreatePR={() => setShowCreatePR(true)}
+        onCommit={() => setShowCommitDialog(true)}
       />
       <div className="flex-1 flex overflow-hidden">
         {/* Left sidebar area — fixed width, content changes per tab */}
@@ -313,6 +316,18 @@ export default function App() {
           onCancel={() => { setShowCreatePR(false); setPrError(null) }}
           isSubmitting={prCreating}
           error={prError}
+        />
+      )}
+      {showCommitDialog && (
+        <CommitDialog
+          onClose={() => setShowCommitDialog(false)}
+          onCommitted={() => {
+            setShowCommitDialog(false)
+            // Refresh git status
+            if (typeof window.claude?.getGitStatus === 'function') {
+              window.claude.getGitStatus().then(setGitStatus).catch(() => {})
+            }
+          }}
         />
       )}
     </div>

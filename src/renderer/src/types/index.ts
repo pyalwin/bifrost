@@ -179,6 +179,9 @@ export interface ClaudeAPI {
   archiveItem(type: 'project' | 'session', id: string): Promise<void>
   unarchiveItem(type: 'project' | 'session', id: string): Promise<void>
   getArchived(): Promise<{ projects: string[]; sessions: string[] }>
+  getStagedFiles(): Promise<{ staged: string[]; unstaged: string[] }>
+  stageAll(): Promise<void>
+  gitCommit(message: string): Promise<{ success: boolean; error?: string }>
   openExternal(url: string): Promise<void>
   getGitUser(): Promise<{ name: string; initial: string }>
   getGitStatus(): Promise<{ hasUncommitted: boolean; unpushedCount: number }>

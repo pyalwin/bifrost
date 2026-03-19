@@ -333,6 +333,50 @@ function registerIpcHandlers(): void {
     return baseBranches[workingDir] ?? null
   })
 
+  ipcMain.handle('claude:get-staged-files', async () => {
+    const workingDir = sessionManager.workingDir
+    if (!workingDir) return { staged: [], unstaged: [] }
+    try {
+      const { execSync } = await import('child_process')
+      const status = execSync('git status --porcelain', { cwd: workingDir, encoding: 'utf-8' }).trim()
+      if (!status) return { staged: [], unstaged: [] }
+      const staged: string[] = []
+      const unstaged: string[] = []
+      for (const line of status.split('\n')) {
+        const x = line[0]  // staged status
+        const y = line[1]  // unstaged status
+        const file = line.slice(3)
+        if (x !== ' ' && x !== '?') staged.push(file)
+        if (y !== ' ' || x === '?') unstaged.push(file)
+      }
+      return { staged, unstaged }
+    } catch {
+      return { staged: [], unstaged: [] }
+    }
+  })
+
+  ipcMain.handle('claude:stage-all', async () => {
+    const workingDir = sessionManager.workingDir
+    if (!workingDir) return
+    try {
+      const { execSync } = await import('child_process')
+      execSync('git add -A', { cwd: workingDir, encoding: 'utf-8' })
+    } catch { /* ignore */ }
+  })
+
+  ipcMain.handle('claude:git-commit', async (_event, message: string) => {
+    const workingDir = sessionManager.workingDir
+    if (!workingDir) return { success: false, error: 'No working directory' }
+    try {
+      const { execSync } = await import('child_process')
+      const safeMsg = message.replace(/'/g, "'\\''")
+      execSync(`git commit -m '${safeMsg}'`, { cwd: workingDir, encoding: 'utf-8' })
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+
   ipcMain.handle('claude:open-external', async (_event, url: string) => {
     shell.openExternal(url)
   })

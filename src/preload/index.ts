@@ -47,6 +47,9 @@ const claudeAPI = {
   unarchiveItem: (type: 'project' | 'session', id: string) =>
     ipcRenderer.invoke('claude:unarchive-item', type, id),
   getArchived: () => ipcRenderer.invoke('claude:get-archived'),
+  getStagedFiles: () => ipcRenderer.invoke('claude:get-staged-files'),
+  stageAll: () => ipcRenderer.invoke('claude:stage-all'),
+  gitCommit: (message: string) => ipcRenderer.invoke('claude:git-commit', message),
   openExternal: (url: string) => ipcRenderer.invoke('claude:open-external', url),
   getGitUser: () => ipcRenderer.invoke('claude:get-git-user'),
   getGitStatus: () => ipcRenderer.invoke('claude:get-git-status'),

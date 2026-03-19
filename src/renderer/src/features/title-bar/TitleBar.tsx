@@ -18,6 +18,7 @@ interface TitleBarProps {
   pullRequest?: { number: number; title: string; url: string; isDraft: boolean; state: string } | null
   gitStatus?: { hasUncommitted: boolean; unpushedCount: number }
   onCreatePR?: () => void
+  onCommit?: () => void
 }
 
 const stateColors: Record<ConnectionState, string> = {
@@ -42,6 +43,7 @@ export function TitleBar({
   pullRequest,
   gitStatus,
   onCreatePR,
+  onCommit,
 }: TitleBarProps) {
   // Extract project name from path (last directory component)
   const projectName = projectPath ? projectPath.split('/').filter(Boolean).pop() ?? '' : ''
@@ -294,7 +296,10 @@ export function TitleBar({
 
           if (hasUncommitted) {
             return (
-              <button className="flex items-center gap-1.5 px-3 py-1.5 border border-amber-500/40 rounded-lg text-[12px] font-medium bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors">
+              <button
+                onClick={onCommit}
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-amber-500/40 rounded-lg text-[12px] font-medium bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors"
+              >
                 <GitCommit className="w-3.5 h-3.5" />
                 Commit
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
