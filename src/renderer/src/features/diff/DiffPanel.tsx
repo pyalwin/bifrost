@@ -17,13 +17,14 @@ export function DiffPanel({ files, theme, onSubmitReview }: Props) {
   const [reviewComments, setReviewComments] = useState<ReviewComment[]>([])
   const [commentingLine, setCommentingLine] = useState<{ filename: string; lineNumber: number } | null>(null)
   const [renderedCount, setRenderedCount] = useState(BATCH_SIZE)
-  const prevFilesRef = useRef(files)
+  const prevFileKeyRef = useRef('')
 
-  // Reset rendered count when files change
+  // Only reset progressive rendering when the file set actually changes
   useEffect(() => {
-    if (prevFilesRef.current !== files) {
+    const key = files.map(f => f.filename).sort().join('\n')
+    if (key !== prevFileKeyRef.current) {
+      prevFileKeyRef.current = key
       setRenderedCount(BATCH_SIZE)
-      prevFilesRef.current = files
     }
   }, [files])
 
