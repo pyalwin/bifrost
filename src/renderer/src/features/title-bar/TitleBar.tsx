@@ -311,7 +311,7 @@ export function TitleBar({
                 <span className="text-muted-foreground/30 mx-0.5">·</span>
                 <span
                   className="text-green-500 text-[11px] hover:underline cursor-pointer"
-                  onClick={(e) => { e.stopPropagation(); window.claude?.openExternal(pullRequest.url) }}
+                  onClick={(e) => { e.stopPropagation(); typeof window.claude?.openExternal === 'function' && window.claude.openExternal(pullRequest.url) }}
                 >PR #{pullRequest.number}</span>
               </button>
             )
@@ -332,7 +332,7 @@ export function TitleBar({
           if (pullRequest) {
             return (
               <button
-                onClick={() => window.claude?.openExternal(pullRequest.url)}
+                onClick={() => typeof window.claude?.openExternal === 'function' && window.claude.openExternal(pullRequest.url)}
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-[11px] font-semibold cursor-pointer hover:opacity-80 transition-opacity",
                   pullRequest.isDraft ? "border-border text-muted-foreground" : "border-green-600/50 text-green-500"

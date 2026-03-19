@@ -69,7 +69,7 @@ export function CommitsView({ branch }: Props) {
               {/* SHA */}
               {commit.url ? (
                 <button
-                  onClick={() => window.claude?.openExternal(commit.url!)}
+                  onClick={() => typeof window.claude?.openExternal === 'function' && window.claude.openExternal(commit.url!)}
                   className="text-[11px] font-mono text-blue-400 shrink-0 pt-0.5 hover:underline flex items-center gap-1 cursor-pointer"
                   title="Open on GitHub"
                 >
