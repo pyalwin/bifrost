@@ -177,6 +177,38 @@ function registerIpcHandlers(): void {
     if (result.canceled || result.filePaths.length === 0) return null
     return result.filePaths[0]
   })
+
+  ipcMain.handle('claude:archive-item', async (_event, type: 'project' | 'session', id: string) => {
+    const key = type === 'project' ? 'archivedProjects' : 'archivedSessions'
+    const archived = (store.get(key, []) as string[])
+    if (!archived.includes(id)) {
+      archived.push(id)
+      store.set(key, archived)
+    }
+  })
+
+  ipcMain.handle('claude:unarchive-item', async (_event, type: 'project' | 'session', id: string) => {
+    if (type === 'project') {
+      // Unarchive the project
+      const archivedProjects = (store.get('archivedProjects', []) as string[])
+      store.set('archivedProjects', archivedProjects.filter((p) => p !== id))
+      // Also unarchive any individually archived sessions within this project
+      const allSessions = await discoverSessions(id)
+      const sessionIds = new Set(allSessions.map((s) => s.id))
+      const archivedSessions = (store.get('archivedSessions', []) as string[])
+      store.set('archivedSessions', archivedSessions.filter((s) => !sessionIds.has(s)))
+    } else {
+      const archivedSessions = (store.get('archivedSessions', []) as string[])
+      store.set('archivedSessions', archivedSessions.filter((s) => s !== id))
+    }
+  })
+
+  ipcMain.handle('claude:get-archived', async () => {
+    return {
+      projects: store.get('archivedProjects', []) as string[],
+      sessions: store.get('archivedSessions', []) as string[],
+    }
+  })
 }
 
 function safeSend(channel: string, ...args: unknown[]): void {
