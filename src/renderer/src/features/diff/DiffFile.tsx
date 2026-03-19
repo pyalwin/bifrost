@@ -15,7 +15,7 @@ interface Props {
   onRemoveComment?: (id: string) => void
 }
 
-export function DiffFile({ file, theme }: Props) {
+export function DiffFile({ file, theme, reviewMode, reviewComments, commentingLine, onLineClick, onAddComment, onCancelComment, onRemoveComment }: Props) {
   const [collapsed, setCollapsed] = useState(false)
   const [comments, setComments] = useState<InlineComment[]>(file.comments)
 
@@ -74,7 +74,12 @@ export function DiffFile({ file, theme }: Props) {
           commentsByLine={commentsByLine}
           onResolve={handleResolve}
           onReply={handleReply}
-          onLineClick={(ln) => console.log('new comment on line', ln)}
+          onLineClick={reviewMode ? onLineClick : undefined}
+          reviewComments={reviewComments}
+          commentingLine={commentingLine}
+          onAddComment={onAddComment}
+          onCancelComment={onCancelComment}
+          onRemoveComment={onRemoveComment}
         />
       )}
     </div>
