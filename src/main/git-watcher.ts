@@ -47,7 +47,8 @@ export class GitWatcher extends EventEmitter {
   forceRefresh(): void {
     console.log('[GitWatcher] Force refresh triggered')
     if (this.debounceTimer) clearTimeout(this.debounceTimer)
-    this.refresh()
+    // Debounce force refreshes too — rapid tool calls shouldn't hammer git
+    this.debounceTimer = setTimeout(() => this.refresh(), 300)
   }
 
   private debouncedRefresh(): void {

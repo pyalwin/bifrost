@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { DiffFileData, Review } from '../../types'
 import { DiffPanel } from './DiffPanel'
 import { ReviewTabsBar } from './ReviewTabsBar'
@@ -22,21 +22,23 @@ export function FilesChangedView({ files, theme, reviews, activeReviewId, onSele
   const [localFiles, setLocalFiles] = useState<DiffFileData[]>([])
   const [loadingLocal, setLoadingLocal] = useState(false)
 
-  // Fetch local diffs when switching to local mode
+  // Fetch local diffs only when switching to local mode (not on every files change)
+  const filesRef = useRef(files)
+  filesRef.current = files
+
   useEffect(() => {
     if (diffMode !== 'local') return
     setLoadingLocal(true)
     if (typeof window.claude?.getLocalDiffs === 'function') {
       window.claude.getLocalDiffs()
         .then(f => setLocalFiles(f ?? []))
-        .catch(() => setLocalFiles(files)) // fallback to all files
+        .catch(() => setLocalFiles(filesRef.current))
         .finally(() => setLoadingLocal(false))
     } else {
-      // Fallback: use the branch diffs if IPC not available (needs app restart)
-      setLocalFiles(files)
+      setLocalFiles(filesRef.current)
       setLoadingLocal(false)
     }
-  }, [diffMode, files])
+  }, [diffMode])
 
   const activeFiles = diffMode === 'local' ? localFiles : files
 
