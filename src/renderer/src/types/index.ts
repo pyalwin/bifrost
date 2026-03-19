@@ -179,6 +179,8 @@ export interface ClaudeAPI {
   archiveItem(type: 'project' | 'session', id: string): Promise<void>
   unarchiveItem(type: 'project' | 'session', id: string): Promise<void>
   getArchived(): Promise<{ projects: string[]; sessions: string[] }>
+  saveReviews(data: { reviews: Review[]; comments: ReviewComment[] }): Promise<void>
+  loadReviews(): Promise<{ reviews: Review[]; comments: ReviewComment[] }>
   getLocalDiffs(): Promise<DiffFileData[]>
   generateCommitMessage(): Promise<string>
   getStagedFiles(): Promise<{ staged: string[]; unstaged: string[] }>

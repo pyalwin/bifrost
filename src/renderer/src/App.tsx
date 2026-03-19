@@ -30,6 +30,27 @@ export default function App() {
   const [activeReviewId, setActiveReviewId] = useState<string | null>(null)
   const [allReviewComments, setAllReviewComments] = useState<ReviewComment[]>([])
 
+  // Load persisted reviews when project changes
+  useEffect(() => {
+    if (!claude.projectPath) return
+    if (typeof window.claude?.loadReviews === 'function') {
+      window.claude.loadReviews()
+        .then(data => {
+          if (data.reviews?.length) setReviews(data.reviews)
+          if (data.comments?.length) setAllReviewComments(data.comments)
+        })
+        .catch(() => {})
+    }
+  }, [claude.projectPath])
+
+  // Save reviews whenever they change
+  useEffect(() => {
+    if (!claude.projectPath) return
+    if (typeof window.claude?.saveReviews === 'function') {
+      window.claude.saveReviews({ reviews, comments: allReviewComments })
+    }
+  }, [reviews, allReviewComments, claude.projectPath])
+
   const handleAddReviewComment = useCallback((comment: ReviewComment) => {
     setAllReviewComments(prev => [...prev, comment])
   }, [])

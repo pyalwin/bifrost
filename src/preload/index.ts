@@ -47,6 +47,8 @@ const claudeAPI = {
   unarchiveItem: (type: 'project' | 'session', id: string) =>
     ipcRenderer.invoke('claude:unarchive-item', type, id),
   getArchived: () => ipcRenderer.invoke('claude:get-archived'),
+  saveReviews: (data: { reviews: unknown[]; comments: unknown[] }) => ipcRenderer.invoke('claude:save-reviews', data),
+  loadReviews: () => ipcRenderer.invoke('claude:load-reviews'),
   getLocalDiffs: () => ipcRenderer.invoke('claude:get-local-diffs'),
   getStagedFiles: () => ipcRenderer.invoke('claude:get-staged-files'),
   generateCommitMessage: () => ipcRenderer.invoke('claude:generate-commit-message'),

@@ -433,6 +433,21 @@ function registerIpcHandlers(): void {
     shell.openExternal(url)
   })
 
+  ipcMain.handle('claude:save-reviews', async (_event, data: { reviews: unknown[]; comments: unknown[] }) => {
+    const workingDir = sessionManager.workingDir
+    if (!workingDir) return
+    const allReviews = (store.get('reviewData', {}) as Record<string, unknown>)
+    allReviews[workingDir] = data
+    store.set('reviewData', allReviews)
+  })
+
+  ipcMain.handle('claude:load-reviews', async () => {
+    const workingDir = sessionManager.workingDir
+    if (!workingDir) return { reviews: [], comments: [] }
+    const allReviews = (store.get('reviewData', {}) as Record<string, Record<string, unknown[]>>)
+    return allReviews[workingDir] ?? { reviews: [], comments: [] }
+  })
+
   ipcMain.handle('claude:get-git-status', async () => {
     const workingDir = sessionManager.workingDir
     if (!workingDir) return { hasUncommitted: false, unpushedCount: 0 }
