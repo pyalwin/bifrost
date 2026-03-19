@@ -18,6 +18,7 @@ interface Props {
   onAddComment?: (text: string) => void
   onCancelComment?: () => void
   onRemoveComment?: (id: string) => void
+  onResolveReviewComment?: (id: string) => void
 }
 
 function LineRow({
@@ -107,7 +108,7 @@ function CommentInput({ onSubmit, onCancel }: { onSubmit: (text: string) => void
 
 export function DiffHunkView({
   hunks, language, theme, commentsByLine, onLineClick, onResolve, onReply,
-  reviewComments, commentingLine, onAddComment, onCancelComment, onRemoveComment,
+  reviewComments, commentingLine, onAddComment, onCancelComment, onRemoveComment, onResolveReviewComment,
 }: Props) {
   const gitUser = useGitUser()
   return (
@@ -117,8 +118,10 @@ export function DiffHunkView({
           {hi > 0 && <div className="h-3" />}
           {hunk.lines.map((line, li) => {
             const lineNum = line.newLineNumber ?? line.oldLineNumber
-            const lineComments = lineNum ? commentsByLine?.get(lineNum) : undefined
-            const lineReviewComments = lineNum ? reviewComments?.filter(c => c.lineNumber === lineNum) : undefined
+            // Only show comments on the new line number to avoid duplication on removed+added pairs
+            const showCommentsHere = line.newLineNumber != null
+            const lineComments = (showCommentsHere && lineNum) ? commentsByLine?.get(lineNum) : undefined
+            const lineReviewComments = (showCommentsHere && lineNum) ? reviewComments?.filter(c => c.lineNumber === lineNum) : undefined
             return (
               <div key={`${hi}-${li}`}>
                 <LineRow
@@ -138,22 +141,36 @@ export function DiffHunkView({
                 )}
                 {/* Review comments for this line */}
                 {lineReviewComments && lineReviewComments.length > 0 && lineReviewComments.map(rc => (
-                  <div key={rc.id} className="px-4 py-1.5 bg-muted/50 border-y border-border/50">
-                    <div className="ml-10 bg-background border border-border rounded-md px-3 py-2">
+                  <div key={rc.id} className={cn("px-4 py-1.5 border-y border-border/50", rc.resolved ? "bg-green-500/[0.03]" : "bg-muted/50")}>
+                    <div className={cn("ml-10 border rounded-md px-3 py-2", rc.resolved ? "bg-background/50 border-green-500/20" : "bg-background border-border")}>
                       <div className="flex items-center gap-2 mb-1 font-sans">
-                        <div className="w-5 h-5 bg-muted-foreground/15 rounded-full flex items-center justify-center text-[9px] font-semibold text-muted-foreground">{gitUser.initial}</div>
-                        <span className="text-[11px] font-semibold">{gitUser.name}</span>
-                        <span className="text-[11px] text-muted-foreground">· L{rc.lineNumber}</span>
-                        {onRemoveComment && (
-                          <button
-                            onClick={() => onRemoveComment(rc.id)}
-                            className="ml-auto text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-                          >
-                            ×
-                          </button>
+                        {rc.resolved ? (
+                          <span className="w-5 h-5 rounded-full bg-green-500/15 flex items-center justify-center text-[10px] text-green-500">✓</span>
+                        ) : (
+                          <div className="w-5 h-5 bg-muted-foreground/15 rounded-full flex items-center justify-center text-[9px] font-semibold text-muted-foreground">{gitUser.initial}</div>
                         )}
+                        <span className={cn("text-[11px] font-semibold", rc.resolved && "text-green-500")}>{rc.resolved ? 'Resolved' : gitUser.name}</span>
+                        <span className="text-[11px] text-muted-foreground">· L{rc.lineNumber}</span>
+                        <div className="ml-auto flex items-center gap-2">
+                          {onResolveReviewComment && (
+                            <button
+                              onClick={() => onResolveReviewComment(rc.id)}
+                              className={cn("text-[10px] transition-colors font-sans", rc.resolved ? "text-green-500 hover:text-muted-foreground" : "text-muted-foreground hover:text-green-500")}
+                            >
+                              {rc.resolved ? 'Unresolve' : 'Resolve'}
+                            </button>
+                          )}
+                          {onRemoveComment && !rc.resolved && (
+                            <button
+                              onClick={() => onRemoveComment(rc.id)}
+                              className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <p className="text-[12px] text-foreground/80 leading-relaxed font-sans">{rc.text}</p>
+                      <p className={cn("text-[12px] leading-relaxed font-sans", rc.resolved ? "text-muted-foreground line-through" : "text-foreground/80")}>{rc.text}</p>
                     </div>
                   </div>
                 ))}

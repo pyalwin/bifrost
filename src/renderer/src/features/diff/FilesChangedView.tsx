@@ -18,9 +18,10 @@ interface Props {
   reviewComments?: ReviewComment[]
   onAddReviewComment?: (comment: ReviewComment) => void
   onRemoveReviewComment?: (id: string) => void
+  onResolveReviewComment?: (id: string) => void
 }
 
-export function FilesChangedView({ files, theme, reviews, activeReviewId, onSelectReview, onSubmitReview, selectedFile, hasUncommitted, reviewComments, onAddReviewComment, onRemoveReviewComment }: Props) {
+export function FilesChangedView({ files, theme, reviews, activeReviewId, onSelectReview, onSubmitReview, selectedFile, hasUncommitted, reviewComments, onAddReviewComment, onRemoveReviewComment, onResolveReviewComment }: Props) {
   const [diffMode, setDiffMode] = useState<DiffMode>(hasUncommitted ? 'local' : 'all')
   const [localFiles, setLocalFiles] = useState<DiffFileData[]>([])
   const [loadingLocal, setLoadingLocal] = useState(false)
@@ -87,7 +88,7 @@ export function FilesChangedView({ files, theme, reviews, activeReviewId, onSele
             Loading local changes...
           </div>
         ) : (
-          <DiffPanel files={displayFiles} theme={theme} onSubmitReview={onSubmitReview} reviewComments={reviewComments} onAddReviewComment={onAddReviewComment} onRemoveReviewComment={onRemoveReviewComment} />
+          <DiffPanel files={displayFiles} theme={theme} onSubmitReview={onSubmitReview} reviewComments={reviewComments} onAddReviewComment={onAddReviewComment} onRemoveReviewComment={onRemoveReviewComment} onResolveReviewComment={onResolveReviewComment} />
         )}
       </div>
     </div>

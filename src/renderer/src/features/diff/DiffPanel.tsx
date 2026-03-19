@@ -11,11 +11,12 @@ interface Props {
   reviewComments?: ReviewComment[]
   onAddReviewComment?: (comment: ReviewComment) => void
   onRemoveReviewComment?: (id: string) => void
+  onResolveReviewComment?: (id: string) => void
 }
 
 const BATCH_SIZE = 3
 
-export function DiffPanel({ files, theme, onSubmitReview, reviewComments: externalComments, onAddReviewComment, onRemoveReviewComment }: Props) {
+export function DiffPanel({ files, theme, onSubmitReview, reviewComments: externalComments, onAddReviewComment, onRemoveReviewComment, onResolveReviewComment }: Props) {
   const [reviewMode, setReviewMode] = useState(false)
   const [localComments, setLocalComments] = useState<ReviewComment[]>([])
   const [commentingLine, setCommentingLine] = useState<{ filename: string; lineNumber: number } | null>(null)
@@ -127,6 +128,7 @@ export function DiffPanel({ files, theme, onSubmitReview, reviewComments: extern
             onAddComment={handleAddComment}
             onCancelComment={handleCancelComment}
             onRemoveComment={handleRemoveComment}
+            onResolveReviewComment={onResolveReviewComment}
           />
         ))}
         {remaining > 0 && (

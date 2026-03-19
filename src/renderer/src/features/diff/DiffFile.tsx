@@ -14,9 +14,10 @@ interface Props {
   onAddComment?: (text: string) => void
   onCancelComment?: () => void
   onRemoveComment?: (id: string) => void
+  onResolveReviewComment?: (id: string) => void
 }
 
-export function DiffFile({ file, theme, reviewMode, reviewComments, commentingLine, onLineClick, onAddComment, onCancelComment, onRemoveComment }: Props) {
+export function DiffFile({ file, theme, reviewMode, reviewComments, commentingLine, onLineClick, onAddComment, onCancelComment, onRemoveComment, onResolveReviewComment }: Props) {
   const [collapsed, setCollapsed] = useState(false)
   const [viewed, setViewed] = useState(false)
   const gitUser = useGitUser()
@@ -87,6 +88,7 @@ export function DiffFile({ file, theme, reviewMode, reviewComments, commentingLi
           onAddComment={onAddComment}
           onCancelComment={onCancelComment}
           onRemoveComment={onRemoveComment}
+          onResolveReviewComment={onResolveReviewComment}
         />
       )}
     </div>

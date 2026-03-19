@@ -37,6 +37,10 @@ export default function App() {
   const handleRemoveReviewComment = useCallback((id: string) => {
     setAllReviewComments(prev => prev.filter(c => c.id !== id))
   }, [])
+
+  const handleResolveReviewComment = useCallback((id: string) => {
+    setAllReviewComments(prev => prev.map(c => c.id === id ? { ...c, resolved: !c.resolved } : c))
+  }, [])
   const [currentPR, setCurrentPR] = useState<PullRequest | null>(null)
   const [showCreatePR, setShowCreatePR] = useState(false)
   const [prCreating, setPrCreating] = useState(false)
@@ -122,7 +126,9 @@ export default function App() {
     message += `Please fix each issue and explain what you changed.`
 
     await claude.startReviewSession(workingDir, message)
-  }, [claude])
+    // Switch to conversation tab to show the discussion
+    setActiveTab('conversation')
+  }, [claude, setActiveTab])
 
   const handleResumeSession = useCallback(async (sessionId: string, workingDir: string) => {
     setSessionError(null)
@@ -302,6 +308,7 @@ export default function App() {
                 reviewComments={allReviewComments}
                 onAddReviewComment={handleAddReviewComment}
                 onRemoveReviewComment={handleRemoveReviewComment}
+                onResolveReviewComment={handleResolveReviewComment}
               />
             )}
 
@@ -315,7 +322,7 @@ export default function App() {
               <ReviewsView
                 reviews={reviews}
                 onStartNewReview={() => setActiveTab('files')}
-                onSelectReview={(id) => { setActiveReviewId(id); setActiveTab('files') }}
+                onSelectReview={(id) => { setActiveReviewId(id); setActiveTab('conversation') }}
               />
             )}
           </div>
