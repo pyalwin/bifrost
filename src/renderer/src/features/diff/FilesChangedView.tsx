@@ -29,12 +29,14 @@ export function FilesChangedView({ files, theme, reviews, activeReviewId, onSele
     if (typeof window.claude?.getLocalDiffs === 'function') {
       window.claude.getLocalDiffs()
         .then(f => setLocalFiles(f ?? []))
-        .catch(() => setLocalFiles([]))
+        .catch(() => setLocalFiles(files)) // fallback to all files
         .finally(() => setLoadingLocal(false))
     } else {
+      // Fallback: use the branch diffs if IPC not available (needs app restart)
+      setLocalFiles(files)
       setLoadingLocal(false)
     }
-  }, [diffMode])
+  }, [diffMode, files])
 
   const activeFiles = diffMode === 'local' ? localFiles : files
 
