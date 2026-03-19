@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Archive, ArchiveRestore, ChevronDown, ChevronRight, Folder, PanelLeftClose, PanelLeftOpen, SquarePen } from 'lucide-react'
+import { ChevronDown, ChevronRight, Folder, GitBranch, SquarePen } from 'lucide-react'
 import { cn } from '../../lib/utils'
-import type { SessionInfo } from '../../types'
+import type { ProjectHierarchy, BranchGroup } from '../../types'
 
 interface SidebarProps {
   isOpen: boolean
@@ -9,13 +9,7 @@ interface SidebarProps {
   onNewSession: () => void
   onResumeSession: (sessionId: string, workingDir: string) => void
   activeSessionId?: string | null
-}
-
-interface ProjectGroup {
-  name: string
-  workingDir: string
-  sessions: SessionInfo[]
-  latestTimestamp: number
+  currentBranch?: string
 }
 
 function timeAgo(timestamp: number): string {
@@ -33,182 +27,111 @@ function timeAgo(timestamp: number): string {
   return `${months}mo`
 }
 
-function extractProjectName(workingDir: string): string {
-  const parts = workingDir.split('/').filter(Boolean)
-  const name = parts.pop() ?? workingDir
-  if (['code', 'src', 'projects', 'repos', 'work', 'dev'].includes(name.toLowerCase()) && parts.length > 0) {
-    return parts.pop() + '/' + name
-  }
-  return name
-}
-
-function groupSessionsByProject(sessions: SessionInfo[]): ProjectGroup[] {
-  const map = new Map<string, ProjectGroup>()
-  for (const session of sessions) {
-    const existing = map.get(session.workingDir)
-    if (existing) {
-      existing.sessions.push(session)
-      if (session.timestamp > existing.latestTimestamp) existing.latestTimestamp = session.timestamp
-    } else {
-      map.set(session.workingDir, {
-        name: extractProjectName(session.workingDir),
-        workingDir: session.workingDir,
-        sessions: [session],
-        latestTimestamp: session.timestamp,
-      })
-    }
-  }
-  for (const group of map.values()) group.sessions.sort((a, b) => b.timestamp - a.timestamp)
-  return Array.from(map.values()).sort((a, b) => b.latestTimestamp - a.latestTimestamp)
-}
-
-const MAX_VISIBLE = 10
-
-function ProjectRow({
-  group, activeSessionId, onResumeSession, onArchiveProject, onArchiveSession, archiveMode,
+function BranchRow({
+  branch, isExpanded, isCurrentBranch, activeSessionId,
+  onToggle, onResumeSession,
 }: {
-  group: ProjectGroup
+  branch: BranchGroup
+  isExpanded: boolean
+  isCurrentBranch: boolean
   activeSessionId?: string | null
+  onToggle: () => void
   onResumeSession: (sessionId: string, workingDir: string) => void
-  onArchiveProject?: (workingDir: string) => void
-  onArchiveSession?: (sessionId: string) => void
-  archiveMode: 'archive' | 'unarchive'
 }) {
-  const [showAll, setShowAll] = useState(false)
-  const visible = showAll ? group.sessions : group.sessions.slice(0, MAX_VISIBLE)
-  const remaining = group.sessions.length - MAX_VISIBLE
-
-  const ArchiveIcon = archiveMode === 'archive' ? Archive : ArchiveRestore
+  const sessionCount = branch.sessions.length
 
   return (
-    <div className="mb-2">
-      {/* Project name */}
-      <div className="group flex items-center gap-2 px-4 pt-3 pb-1">
-        <Folder className="w-4 h-4 text-muted-foreground/60 shrink-0" />
-        <span className="text-[13px] font-medium text-foreground/80 truncate flex-1">{group.name}</span>
-        {onArchiveProject && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onArchiveProject(group.workingDir) }}
-            className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted"
-            title={archiveMode === 'archive' ? 'Archive project' : 'Unarchive project'}
-          >
-            <ArchiveIcon className="w-3.5 h-3.5 text-muted-foreground/60" />
-          </button>
+    <div>
+      <button
+        onClick={onToggle}
+        className={cn(
+          'w-full flex items-center gap-1.5 px-4 pl-7 py-[5px] text-[12px] transition-colors',
+          isCurrentBranch
+            ? 'text-foreground font-medium'
+            : 'text-muted-foreground hover:text-foreground'
         )}
-      </div>
+      >
+        {isExpanded
+          ? <ChevronDown className="w-3 h-3 shrink-0" />
+          : <ChevronRight className="w-3 h-3 shrink-0" />
+        }
+        <GitBranch className="w-3 h-3 shrink-0" />
+        <span className="truncate">{branch.name}</span>
+        {branch.baseBranch && isExpanded && (
+          <span className="text-[10px] text-muted-foreground/40 ml-auto shrink-0">→ {branch.baseBranch}</span>
+        )}
+        {!isExpanded && (
+          <span className="text-[10px] text-muted-foreground/30 ml-auto shrink-0">
+            {sessionCount}
+          </span>
+        )}
+      </button>
 
-      {/* Sessions */}
-      <div>
-        {visible.map((session) => {
-          const isActive = session.id === activeSessionId
-          return (
-            <button
-              key={session.id}
-              onClick={() => onResumeSession(session.id, session.workingDir)}
-              className={cn(
-                'group/session w-full text-left px-4 py-[7px] flex items-center gap-2 transition-colors',
-                isActive
-                  ? 'bg-muted text-foreground'
-                  : 'text-foreground/70 hover:bg-muted/60 hover:text-foreground'
-              )}
-            >
-              <span className="text-[13px] truncate flex-1">
-                {session.firstMessage || 'Untitled'}
-              </span>
-              <span className={cn(
-                'text-[12px] text-muted-foreground/50 shrink-0 tabular-nums',
-                onArchiveSession && 'group-hover/session:hidden'
-              )}>
-                {timeAgo(session.timestamp)}
-              </span>
-              {onArchiveSession && (
-                <span
-                  role="button"
-                  tabIndex={0}
-                  onClick={(e) => { e.stopPropagation(); onArchiveSession(session.id) }}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); onArchiveSession(session.id) } }}
-                  className="hidden group-hover/session:inline-flex opacity-0 group-hover/session:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted shrink-0 cursor-pointer"
-                  title={archiveMode === 'archive' ? 'Archive thread' : 'Unarchive thread'}
-                >
-                  <ArchiveIcon className="w-3.5 h-3.5 text-muted-foreground/60" />
+      {isExpanded && (
+        <div>
+          {branch.sessions.map((session) => {
+            const isActive = session.id === activeSessionId
+            return (
+              <button
+                key={session.id}
+                onClick={() => onResumeSession(session.id, session.workingDir)}
+                className={cn(
+                  'w-full text-left px-4 pl-[42px] py-[6px] flex items-center gap-2 text-[12px] transition-colors',
+                  isActive
+                    ? 'bg-muted text-foreground'
+                    : 'text-foreground/60 hover:bg-muted/60 hover:text-foreground'
+                )}
+              >
+                <span className="truncate flex-1">{session.firstMessage || 'Untitled'}</span>
+                <span className="text-[11px] text-muted-foreground/40 shrink-0 tabular-nums">
+                  {timeAgo(session.timestamp)}
                 </span>
-              )}
-            </button>
-          )
-        })}
-
-        {remaining > 0 && !showAll && (
-          <button
-            onClick={() => setShowAll(true)}
-            className="w-full text-left px-4 py-[5px] text-[12px] text-muted-foreground/40 hover:text-muted-foreground transition-colors"
-          >
-            Show more
-          </button>
-        )}
-      </div>
+              </button>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
 
 export function Sidebar({
-  isOpen, onToggle, onNewSession, onResumeSession, activeSessionId,
+  isOpen, onToggle, onNewSession, onResumeSession, activeSessionId, currentBranch,
 }: SidebarProps) {
-  const [sessions, setSessions] = useState<SessionInfo[]>([])
-  const [archivedIds, setArchivedIds] = useState<{ projects: string[]; sessions: string[] }>({ projects: [], sessions: [] })
-  const [showArchived, setShowArchived] = useState(false)
+  const [projects, setProjects] = useState<ProjectHierarchy[]>([])
+  const [expandedBranches, setExpandedBranches] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     if (!isOpen) return
     window.claude
-      ?.listSessions()
-      .then((data) => setSessions(data ?? []))
-      .catch(() => setSessions([]))
-    window.claude
-      ?.getArchived()
-      .then((data) => setArchivedIds(data ?? { projects: [], sessions: [] }))
-      .catch(() => setArchivedIds({ projects: [], sessions: [] }))
-  }, [isOpen])
+      ?.listSessionsGrouped()
+      .then((data) => {
+        setProjects(data ?? [])
+        // Auto-expand the current branch
+        if (currentBranch) {
+          const keys = (data ?? []).flatMap(p =>
+            p.branches.filter(b => b.name === currentBranch).map(b => `${p.workingDir}:${b.name}`)
+          )
+          if (keys.length > 0) {
+            setExpandedBranches(prev => {
+              const next = new Set(prev)
+              for (const k of keys) next.add(k)
+              return next
+            })
+          }
+        }
+      })
+      .catch(() => setProjects([]))
+  }, [isOpen, currentBranch])
 
-  const handleArchiveProject = async (workingDir: string) => {
-    try {
-      await window.claude?.archiveItem('project', workingDir)
-      setArchivedIds((prev) => ({ ...prev, projects: [...prev.projects, workingDir] }))
-    } catch { /* IPC failure — don't update state */ }
+  const toggleBranch = (key: string) => {
+    setExpandedBranches(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
   }
-
-  const handleArchiveSession = async (sessionId: string) => {
-    try {
-      await window.claude?.archiveItem('session', sessionId)
-      setArchivedIds((prev) => ({ ...prev, sessions: [...prev.sessions, sessionId] }))
-    } catch { /* IPC failure — don't update state */ }
-  }
-
-  const handleUnarchiveProject = async (workingDir: string) => {
-    try {
-      await window.claude?.unarchiveItem('project', workingDir)
-      const projectSessionIds = sessions.filter((s) => s.workingDir === workingDir).map((s) => s.id)
-      setArchivedIds((prev) => ({
-        projects: prev.projects.filter((p) => p !== workingDir),
-        sessions: prev.sessions.filter((s) => !projectSessionIds.includes(s)),
-      }))
-    } catch { /* IPC failure — don't update state */ }
-  }
-
-  const handleUnarchiveSession = async (sessionId: string) => {
-    try {
-      await window.claude?.unarchiveItem('session', sessionId)
-      setArchivedIds((prev) => ({ ...prev, sessions: prev.sessions.filter((s) => s !== sessionId) }))
-    } catch { /* IPC failure — don't update state */ }
-  }
-
-  const activeSessions = sessions.filter(
-    (s) => !archivedIds.projects.includes(s.workingDir) && !archivedIds.sessions.includes(s.id)
-  )
-  const archivedSessions = sessions.filter(
-    (s) => archivedIds.projects.includes(s.workingDir) || archivedIds.sessions.includes(s.id)
-  )
-  const activeProjects = groupSessionsByProject(activeSessions)
-  const archivedProjects = groupSessionsByProject(archivedSessions)
 
   return (
     <div
@@ -236,66 +159,40 @@ export function Sidebar({
             <span className="text-[12px] font-medium text-muted-foreground/60">Threads</span>
           </div>
 
-          {/* Project groups with sessions */}
+          {/* Project → Branch → Sessions hierarchy */}
           <div className="flex-1 overflow-y-auto overflow-x-hidden pb-2">
-            {activeProjects.length === 0 && archivedProjects.length === 0 ? (
+            {projects.length === 0 ? (
               <p className="text-[12px] text-muted-foreground/40 px-4 py-6 text-center">
                 No sessions yet
               </p>
             ) : (
-              <>
-                {activeProjects.length === 0 ? (
-                  <p className="text-[12px] text-muted-foreground/40 px-4 py-6 text-center">
-                    All threads archived
-                  </p>
-                ) : (
-                  activeProjects.map((group) => (
-                    <ProjectRow
-                      key={group.workingDir}
-                      group={group}
-                      activeSessionId={activeSessionId}
-                      onResumeSession={onResumeSession}
-                      onArchiveProject={handleArchiveProject}
-                      onArchiveSession={handleArchiveSession}
-                      archiveMode="archive"
-                    />
-                  ))
-                )}
-
-                {/* Archived section */}
-                {archivedProjects.length > 0 && (
-                  <div className="mt-4 border-t border-border/50">
-                    <button
-                      onClick={() => setShowArchived(!showArchived)}
-                      className="w-full flex items-center gap-2 px-4 pt-3 pb-1 text-[12px] font-medium text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-                    >
-                      {showArchived ? (
-                        <ChevronDown className="w-3.5 h-3.5" />
-                      ) : (
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      )}
-                      Archived
-                      <span className="text-muted-foreground/40">({archivedSessions.length})</span>
-                    </button>
-                    {showArchived &&
-                      archivedProjects.map((group) => (
-                        <ProjectRow
-                          key={group.workingDir}
-                          group={group}
-                          activeSessionId={activeSessionId}
-                          onResumeSession={onResumeSession}
-                          onArchiveProject={handleUnarchiveProject}
-                          onArchiveSession={handleUnarchiveSession}
-                          archiveMode="unarchive"
-                        />
-                      ))
-                    }
+              projects.map((project) => (
+                <div key={project.workingDir} className="mb-2">
+                  {/* Project header */}
+                  <div className="flex items-center gap-2 px-4 pt-3 pb-1">
+                    <Folder className="w-4 h-4 text-muted-foreground/60 shrink-0" />
+                    <span className="text-[13px] font-medium text-foreground/80 truncate">{project.name}</span>
                   </div>
-                )}
-              </>
+
+                  {/* Branch groups */}
+                  {project.branches.map((branch) => {
+                    const branchKey = `${project.workingDir}:${branch.name}`
+                    return (
+                      <BranchRow
+                        key={branchKey}
+                        branch={branch}
+                        isExpanded={expandedBranches.has(branchKey)}
+                        isCurrentBranch={branch.name === currentBranch}
+                        activeSessionId={activeSessionId}
+                        onToggle={() => toggleBranch(branchKey)}
+                        onResumeSession={onResumeSession}
+                      />
+                    )
+                  })}
+                </div>
+              ))
             )}
           </div>
-
         </div>
       )}
     </div>
