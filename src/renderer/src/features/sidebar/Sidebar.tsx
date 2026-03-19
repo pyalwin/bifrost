@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ChevronDown, ChevronRight, Folder, GitBranch, SquarePen } from 'lucide-react'
+import { ChevronDown, ChevronRight, Folder, SquarePen } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import type { ProjectHierarchy, BranchGroup, PullRequest } from '../../types'
 
@@ -59,7 +59,6 @@ function BranchRow({
           ? <ChevronDown className="w-3 h-3 shrink-0" />
           : <ChevronRight className="w-3 h-3 shrink-0" />
         }
-        <GitBranch className="w-3 h-3 shrink-0" />
         <span className="truncate">{branch.name}</span>
         {!isExpanded && (
           <span className="text-[10px] text-muted-foreground/30 ml-auto shrink-0">

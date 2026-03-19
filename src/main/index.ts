@@ -349,6 +349,81 @@ function registerIpcHandlers(): void {
     }
   })
 
+  ipcMain.handle('claude:get-pr-prefill', async () => {
+    const workingDir = sessionManager.workingDir
+    if (!workingDir) return { title: '', body: '' }
+    try {
+      const { execSync } = await import('child_process')
+      const { readFileSync, existsSync } = await import('fs')
+      const { join: joinPath } = await import('path')
+
+      // Get branch name for title
+      const branch = execSync('git rev-parse --abbrev-ref HEAD', {
+        cwd: workingDir, encoding: 'utf-8',
+      }).trim()
+
+      // Generate title from branch name
+      const title = branch
+        .replace(/^(feat|fix|chore|docs|refactor|test|style|perf|ci|build)\//i, '')
+        .replace(/[-_/]/g, ' ')
+        .replace(/^\w/, (c: string) => c.toUpperCase())
+
+      // Get base branch
+      const baseBranches = (store.get('baseBranches', {}) as Record<string, string>)
+      let baseBranch = baseBranches[workingDir] ?? 'main'
+      try {
+        execSync(`git rev-parse --verify ${baseBranch}`, { cwd: workingDir, encoding: 'utf-8' })
+      } catch {
+        baseBranch = 'main'
+      }
+
+      // Get commit messages for body
+      let commits = ''
+      try {
+        commits = execSync(`git log ${baseBranch}..HEAD --format="- %s" --reverse`, {
+          cwd: workingDir, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024,
+        }).trim()
+      } catch { /* no commits or base not found */ }
+
+      // Check for PR template
+      const templatePaths = [
+        '.github/PULL_REQUEST_TEMPLATE.md',
+        '.github/pull_request_template.md',
+        'PULL_REQUEST_TEMPLATE.md',
+        'pull_request_template.md',
+        '.github/PULL_REQUEST_TEMPLATE/default.md',
+      ]
+
+      let template = ''
+      for (const tp of templatePaths) {
+        const fullPath = joinPath(workingDir, tp)
+        if (existsSync(fullPath)) {
+          template = readFileSync(fullPath, 'utf-8')
+          break
+        }
+      }
+
+      // Build body
+      let body = ''
+      if (template) {
+        body = template
+        // If template has a placeholder-like section, append commits
+        if (commits) {
+          body += '\n\n## Commits\n\n' + commits
+        }
+      } else {
+        // Generate a simple body from commits
+        if (commits) {
+          body = '## Changes\n\n' + commits
+        }
+      }
+
+      return { title, body }
+    } catch {
+      return { title: '', body: '' }
+    }
+  })
+
   ipcMain.handle('claude:create-pull-request', async (_event, title: string, body: string, baseBranch?: string) => {
     const workingDir = sessionManager.workingDir
     if (!workingDir) return { success: false, error: 'No working directory' }

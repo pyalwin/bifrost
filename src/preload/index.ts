@@ -52,6 +52,7 @@ const claudeAPI = {
     ipcRenderer.invoke('claude:checkout-branch', branchName, createNew),
   setBaseBranch: (branch: string | null) => ipcRenderer.invoke('claude:set-base-branch', branch),
   getBaseBranch: () => ipcRenderer.invoke('claude:get-base-branch'),
+  getPRPrefill: () => ipcRenderer.invoke('claude:get-pr-prefill'),
   getPullRequest: () => ipcRenderer.invoke('claude:get-pull-request'),
   createPullRequest: (title: string, body: string, baseBranch?: string) =>
     ipcRenderer.invoke('claude:create-pull-request', title, body, baseBranch),
