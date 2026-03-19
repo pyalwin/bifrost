@@ -6,20 +6,23 @@ interface GitUser {
 }
 
 const DEFAULT: GitUser = { name: 'You', initial: 'Y' }
+let cachedForProject: string | null = null
 let cached: GitUser | null = null
 
-export function useGitUser(): GitUser {
+export function useGitUser(projectPath?: string): GitUser {
   const [user, setUser] = useState<GitUser>(cached ?? DEFAULT)
 
   useEffect(() => {
-    if (cached) return
+    // Re-fetch when project changes
+    if (cached && cachedForProject === projectPath) return
     window.claude?.getGitUser()
       .then(u => {
         cached = u
+        cachedForProject = projectPath ?? null
         setUser(u)
       })
       .catch(() => {})
-  }, [])
+  }, [projectPath])
 
   return user
 }
