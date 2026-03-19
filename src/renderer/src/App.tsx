@@ -177,28 +177,31 @@ export default function App() {
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         pullRequest={currentPR}
       />
-      <MainTabBar
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        filesCount={claude.diffs.length}
-        reviewCount={reviews.length}
-        diffStats={diffStats}
-      />
       <div className="flex-1 flex overflow-hidden">
-        {/* Conversation tab */}
-        {activeTab === 'conversation' && (
-          <>
-            <Sidebar
-              isOpen={sidebarOpen}
-              onToggle={() => setSidebarOpen(!sidebarOpen)}
-              onNewSession={handleNewSession}
-              onResumeSession={handleResumeSession}
-              activeSessionId={null}
-              currentBranch={claude.branch}
-              pullRequest={currentPR}
-              onCreatePR={() => setShowCreatePR(true)}
-            />
-            <div className="flex-1 min-w-0">
+        {/* Sidebar — always rendered, only visible on conversation tab */}
+        <Sidebar
+          isOpen={sidebarOpen && activeTab === 'conversation'}
+          onToggle={() => setSidebarOpen(!sidebarOpen)}
+          onNewSession={handleNewSession}
+          onResumeSession={handleResumeSession}
+          activeSessionId={null}
+          currentBranch={claude.branch}
+          pullRequest={currentPR}
+          onCreatePR={() => setShowCreatePR(true)}
+        />
+        {/* Right pane — tab bar + tab content */}
+        <div className="flex-1 flex flex-col min-w-0">
+          <MainTabBar
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            filesCount={claude.diffs.length}
+            reviewCount={reviews.length}
+            diffStats={diffStats}
+          />
+          <div className="flex-1 flex overflow-hidden">
+            {/* Conversation tab */}
+            {activeTab === 'conversation' && (
+              <div className="flex-1 min-w-0">
               {planReview ? (
                 <PlanReview
                   title={planReview.title}
@@ -225,34 +228,35 @@ export default function App() {
                 />
               )}
             </div>
-          </>
-        )}
+            )}
 
-        {/* Files Changed tab */}
-        {activeTab === 'files' && (
-          <FilesChangedView
-            files={claude.diffs}
-            theme={theme}
-            reviews={reviews}
-            activeReviewId={activeReviewId}
-            onSelectReview={setActiveReviewId}
-            onSubmitReview={handleSubmitReview}
-          />
-        )}
+            {/* Files Changed tab */}
+            {activeTab === 'files' && (
+              <FilesChangedView
+                files={claude.diffs}
+                theme={theme}
+                reviews={reviews}
+                activeReviewId={activeReviewId}
+                onSelectReview={setActiveReviewId}
+                onSubmitReview={handleSubmitReview}
+              />
+            )}
 
-        {/* Commits tab */}
-        {activeTab === 'commits' && (
-          <CommitsView branch={claude.branch || ''} />
-        )}
+            {/* Commits tab */}
+            {activeTab === 'commits' && (
+              <CommitsView branch={claude.branch || ''} />
+            )}
 
-        {/* Reviews tab */}
-        {activeTab === 'reviews' && (
-          <ReviewsView
-            reviews={reviews}
-            onStartNewReview={() => setActiveTab('files')}
-            onSelectReview={(id) => { setActiveReviewId(id); setActiveTab('files') }}
-          />
-        )}
+            {/* Reviews tab */}
+            {activeTab === 'reviews' && (
+              <ReviewsView
+                reviews={reviews}
+                onStartNewReview={() => setActiveTab('files')}
+                onSelectReview={(id) => { setActiveReviewId(id); setActiveTab('files') }}
+              />
+            )}
+          </div>
+        </div>
       </div>
       {showCreatePR && (
         <CreatePRDialog
