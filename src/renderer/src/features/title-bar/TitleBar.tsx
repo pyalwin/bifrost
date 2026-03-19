@@ -16,6 +16,8 @@ interface TitleBarProps {
   onToggleSidebar: () => void
   onBranchChange?: () => void
   pullRequest?: { number: number; title: string; url: string; isDraft: boolean; state: string } | null
+  gitStatus?: { hasUncommitted: boolean; unpushedCount: number }
+  onCreatePR?: () => void
 }
 
 const stateColors: Record<ConnectionState, string> = {
@@ -38,6 +40,8 @@ export function TitleBar({
   onToggleSidebar,
   onBranchChange,
   pullRequest,
+  gitStatus,
+  onCreatePR,
 }: TitleBarProps) {
   // Extract project name from path (last directory component)
   const projectName = projectPath ? projectPath.split('/').filter(Boolean).pop() ?? '' : ''
@@ -283,26 +287,62 @@ export function TitleBar({
         >
           {theme === 'light' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
-        {pullRequest && (
-          <div
-            className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-[11px] font-semibold",
-              pullRequest.isDraft
-                ? "border-border text-muted-foreground"
-                : "border-green-600/50 text-green-500"
-            )}
-            title={pullRequest.title}
-          >
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 3.25a2.25 2.25 0 013 2.122v5.256a2.251 2.251 0 11-1.5 0V5.372A2.25 2.25 0 011.5 3.25zm5.677-.177L9.573.677A.25.25 0 0110 .854V2.5h1A2.5 2.5 0 0113.5 5v5.628a2.251 2.251 0 11-1.5 0V5a1 1 0 00-1-1h-1v1.646a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354z"/></svg>
-            PR #{pullRequest.number}
-            <span className={cn(
-              "px-1.5 rounded text-[10px]",
-              pullRequest.isDraft ? "bg-muted" : "bg-green-500/15"
-            )}>
-              {pullRequest.isDraft ? 'Draft' : 'Open'}
-            </span>
-          </div>
-        )}
+        {/* Smart git action button */}
+        {(() => {
+          const hasUncommitted = gitStatus?.hasUncommitted ?? false
+          const unpushed = gitStatus?.unpushedCount ?? 0
+
+          if (hasUncommitted) {
+            return (
+              <button className="flex items-center gap-1.5 px-3 py-1.5 border border-amber-500/40 rounded-lg text-[12px] font-medium bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors">
+                <GitCommit className="w-3.5 h-3.5" />
+                Commit
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+              </button>
+            )
+          }
+
+          if (unpushed > 0 && pullRequest) {
+            return (
+              <button className="flex items-center gap-1.5 px-3 py-1.5 border border-blue-500/40 rounded-lg text-[12px] font-medium bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M4.75 0a.75.75 0 01.75.75v5.19l1.72-1.72a.75.75 0 011.06 1.06l-3 3a.75.75 0 01-1.06 0l-3-3a.75.75 0 011.06-1.06L4 5.94V.75A.75.75 0 014.75 0z" transform="rotate(180 8 8)"/></svg>
+                Push
+                <span className="text-[10px] text-blue-400/70">{unpushed}</span>
+                <span className="text-muted-foreground/30 mx-0.5">·</span>
+                <span className="text-green-500 text-[11px]">PR #{pullRequest.number}</span>
+              </button>
+            )
+          }
+
+          if (unpushed > 0 && !pullRequest) {
+            return (
+              <button
+                onClick={onCreatePR}
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-green-500/40 rounded-lg text-[12px] font-medium bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-colors"
+              >
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 3.25a2.25 2.25 0 013 2.122v5.256a2.251 2.251 0 11-1.5 0V5.372A2.25 2.25 0 011.5 3.25zm5.677-.177L9.573.677A.25.25 0 0110 .854V2.5h1A2.5 2.5 0 0113.5 5v5.628a2.251 2.251 0 11-1.5 0V5a1 1 0 00-1-1h-1v1.646a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354z"/></svg>
+                Create PR
+              </button>
+            )
+          }
+
+          if (pullRequest) {
+            return (
+              <div className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 border rounded-lg text-[11px] font-semibold",
+                pullRequest.isDraft ? "border-border text-muted-foreground" : "border-green-600/50 text-green-500"
+              )} title={pullRequest.title}>
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 3.25a2.25 2.25 0 013 2.122v5.256a2.251 2.251 0 11-1.5 0V5.372A2.25 2.25 0 011.5 3.25zm5.677-.177L9.573.677A.25.25 0 0110 .854V2.5h1A2.5 2.5 0 0113.5 5v5.628a2.251 2.251 0 11-1.5 0V5a1 1 0 00-1-1h-1v1.646a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354z"/></svg>
+                PR #{pullRequest.number}
+                <span className={cn("px-1.5 rounded text-[10px]", pullRequest.isDraft ? "bg-muted" : "bg-green-500/15")}>
+                  {pullRequest.isDraft ? 'Draft' : 'Open'}
+                </span>
+              </div>
+            )
+          }
+
+          return null
+        })()}
         <div className="relative">
           <button
             disabled={openDisabled}
@@ -357,10 +397,6 @@ export function TitleBar({
             </>
           )}
         </div>
-        <button className="flex items-center gap-1.5 px-4 py-1.5 border border-border rounded-lg text-[13px] font-medium bg-background hover:bg-muted transition-colors">
-          <GitCommit className="w-3.5 h-3.5" />
-          Commit
-        </button>
       </div>
     </div>
   )

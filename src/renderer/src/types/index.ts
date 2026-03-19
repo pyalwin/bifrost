@@ -180,6 +180,7 @@ export interface ClaudeAPI {
   unarchiveItem(type: 'project' | 'session', id: string): Promise<void>
   getArchived(): Promise<{ projects: string[]; sessions: string[] }>
   getGitUser(): Promise<{ name: string; initial: string }>
+  getGitStatus(): Promise<{ hasUncommitted: boolean; unpushedCount: number }>
   listBranches(): Promise<string[]>
   checkoutBranch(branchName: string, createNew: boolean): Promise<{ success: boolean; error?: string }>
   setBaseBranch(branch: string | null): Promise<void>

@@ -333,6 +333,24 @@ function registerIpcHandlers(): void {
     return baseBranches[workingDir] ?? null
   })
 
+  ipcMain.handle('claude:get-git-status', async () => {
+    const workingDir = sessionManager.workingDir
+    if (!workingDir) return { hasUncommitted: false, unpushedCount: 0 }
+    try {
+      const { execSync } = await import('child_process')
+      const status = execSync('git status --porcelain', { cwd: workingDir, encoding: 'utf-8' }).trim()
+      const hasUncommitted = status.length > 0
+      let unpushedCount = 0
+      try {
+        const unpushed = execSync('git log @{push}..HEAD --oneline', { cwd: workingDir, encoding: 'utf-8' }).trim()
+        unpushedCount = unpushed ? unpushed.split('\n').length : 0
+      } catch { /* no upstream */ }
+      return { hasUncommitted, unpushedCount }
+    } catch {
+      return { hasUncommitted: false, unpushedCount: 0 }
+    }
+  })
+
   ipcMain.handle('claude:get-pull-request', async () => {
     const workingDir = sessionManager.workingDir
     if (!workingDir) return null

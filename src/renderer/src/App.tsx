@@ -56,6 +56,21 @@ export default function App() {
     }
   }, [claude.branch])
 
+  // Fetch git status (uncommitted changes, unpushed commits) — refresh on diffs change
+  const [gitStatus, setGitStatus] = useState<{ hasUncommitted: boolean; unpushedCount: number }>({ hasUncommitted: false, unpushedCount: 0 })
+  useEffect(() => {
+    if (!claude.projectPath) return
+    const fetch = () => {
+      if (typeof window.claude?.getGitStatus === 'function') {
+        window.claude.getGitStatus().then(setGitStatus).catch(() => {})
+      }
+    }
+    fetch()
+    // Re-check when diffs update (indicates file changes)
+    const interval = setInterval(fetch, 10000)
+    return () => clearInterval(interval)
+  }, [claude.projectPath, claude.diffs])
+
   const handleNewSession = useCallback(async () => {
     setSessionError(null)
     try {
@@ -183,6 +198,8 @@ export default function App() {
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         pullRequest={currentPR}
         openDisabled={!claude.projectPath}
+        gitStatus={gitStatus}
+        onCreatePR={() => setShowCreatePR(true)}
       />
       <div className="flex-1 flex overflow-hidden">
         {/* Left sidebar area — fixed width, content changes per tab */}
