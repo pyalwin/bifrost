@@ -63,7 +63,7 @@ jobs:
 
       - name: Create GitHub Release
         run: |
-          gh release create "$GITHUB_REF_NAME" artifacts/mac-release-artifacts/* \
+          gh release create "$GITHUB_REF_NAME" artifacts/mac-release-artifacts/dist/*.zip \
             --generate-notes \
             $([ "${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}" = "true" ] && echo "--prerelease")
         env:
