@@ -11,9 +11,6 @@ permissions:
 jobs:
   build-mac:
     runs-on: macos-latest
-    strategy:
-      matrix:
-        arch: [arm64, x64]
     steps:
       - uses: actions/checkout@v4
 
@@ -25,24 +22,35 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Electron app
-        run: npx electron-vite build
+      - name: Verify tag matches package version
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          if [ "$TAG_VERSION" != "$PACKAGE_VERSION" ]; then
+            echo "Tag version $TAG_VERSION does not match package.json version $PACKAGE_VERSION"
+            exit 1
+          fi
 
-      - name: Package for macOS (${{ matrix.arch }})
-        run: npx electron-builder --mac --${{ matrix.arch }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build macOS zip artifacts
+        run: npm run build:mac
 
-      - name: Re-sign app bundle
-        run: for app in dist/mac*/Bifrost.app; do codesign --force --deep --sign - "$app" 2>/dev/null; done || true
+      - name: Verify app bundles
+        run: |
+          codesign --verify --deep --strict --verbose=2 dist/mac-arm64/Bifrost.app
+          codesign --verify --deep --strict --verbose=2 dist/mac/Bifrost.app
+
+      - name: Verify Homebrew cask is current
+        run: |
+          npm run generate:cask
+          git diff --exit-code -- Casks/bifrost.rb
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: mac-${{ matrix.arch }}
+          name: mac-release-artifacts
           path: |
-            dist/*.dmg
-            dist/*.zip
+            dist/Bifrost-*-mac.zip
+            dist/Bifrost-*-mac.zip.blockmap
           if-no-files-found: error
 
   release:
@@ -55,17 +63,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-          merge-multiple: true
 
       - name: List artifacts
         run: find artifacts -type f | head -20
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: artifacts/*
-          generate_release_notes: true
-          draft: false
-          prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" artifacts/mac-release-artifacts/* \
+            --generate-notes \
+            $([ "${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}" = "true" ] && echo "--prerelease")
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

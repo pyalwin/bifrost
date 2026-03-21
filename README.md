@@ -173,6 +173,12 @@ npm run generate:cask
 
 This updates `Casks/bifrost.rb` using the local zip artifacts and the GitHub `origin` remote.
 
+### GitHub Release Flow
+
+Push a tag like `v1.0.1` after committing the updated version and cask. The GitHub Actions workflow in `.github/workflows/release.yml` builds the macOS zip artifacts, verifies `Casks/bifrost.rb` is current for that tag, and publishes the zip files to the GitHub release automatically.
+
+For the full manual checklist, see `docs/release-checklist.md`.
+
 ## Contributing
 
 Contributions are welcome! Please open an issue first to discuss what you'd like to change.
