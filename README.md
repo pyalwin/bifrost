@@ -171,11 +171,11 @@ npm run build:mac
 npm run generate:cask
 ```
 
-This updates `Casks/bifrost.rb` using the local zip artifacts and the GitHub `origin` remote. The release workflow does this again in CI and pushes the final cask update automatically so the published tap matches the release assets.
+This updates `Casks/bifrost.rb` using the local zip artifacts and the GitHub `origin` remote. For real releases, CI regenerates the cask from the published GitHub release assets so the published tap matches the exact files Homebrew downloads.
 
 ### GitHub Release Flow
 
-Push a tag like `v1.0.3` after committing the updated version. The GitHub Actions workflow in `.github/workflows/release.yml` builds the macOS zip artifacts, regenerates `Casks/bifrost.rb` from the CI-built release artifacts, opens a PR with the cask update, and publishes the zip files to the GitHub release automatically.
+Push a tag like `v1.0.5` after committing the updated version. `.github/workflows/release.yml` builds and publishes the macOS zip artifacts. After the release is published, `.github/workflows/update-homebrew-cask.yml` downloads those exact release assets, regenerates `Casks/bifrost.rb`, and opens a PR with the cask update.
 
 For the full manual checklist, see `docs/release-checklist.md`.
 

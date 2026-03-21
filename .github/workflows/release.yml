@@ -7,15 +7,12 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   build-mac:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -37,45 +34,6 @@ jobs:
       - name: Build macOS zip artifacts
         run: npm run build:mac
 
-      - name: Generate Homebrew cask with build hashes
-        run: npm run generate:cask
-
-      - name: Push Homebrew cask update branch
-        env:
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-        run: |
-          cp Casks/bifrost.rb /tmp/bifrost.rb
-          git fetch origin "$DEFAULT_BRANCH"
-          git checkout -B cask-update "origin/$DEFAULT_BRANCH"
-          cp /tmp/bifrost.rb Casks/bifrost.rb
-          if git diff --quiet -- Casks/bifrost.rb; then
-            echo "Cask already up to date"
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add Casks/bifrost.rb
-          git commit -m "build: update Homebrew cask for $GITHUB_REF_NAME"
-          git push --force origin HEAD:cask-update-$GITHUB_REF_NAME
-
-      - name: Create or update Homebrew cask PR
-        env:
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if git diff --quiet "origin/$DEFAULT_BRANCH" -- Casks/bifrost.rb; then
-            echo "No cask PR needed"
-            exit 0
-          fi
-          gh pr create \
-            --base "$DEFAULT_BRANCH" \
-            --head "cask-update-$GITHUB_REF_NAME" \
-            --title "build: update Homebrew cask for $GITHUB_REF_NAME" \
-            --body "Automated cask update for release $GITHUB_REF_NAME." \
-          || gh pr edit "cask-update-$GITHUB_REF_NAME" \
-            --title "build: update Homebrew cask for $GITHUB_REF_NAME" \
-            --body "Automated cask update for release $GITHUB_REF_NAME."
-
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -83,7 +41,6 @@ jobs:
           path: |
             dist/Bifrost-*-mac.zip
             dist/Bifrost-*-mac.zip.blockmap
-            Casks/bifrost.rb
           if-no-files-found: error
 
   release:

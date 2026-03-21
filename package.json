@@ -1,6 +1,6 @@
 {
   "name": "bifrost",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "The bridge between worlds — a visual UI for Claude Code",
   "main": "./out/main/index.js",
   "author": "example.com",

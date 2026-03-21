@@ -21,7 +21,7 @@
    ```
 
 2. Wait for the `Build & Release` GitHub Actions workflow to finish.
-3. Confirm the workflow opened or updated an automatic cask PR against the default branch.
+3. Wait for the `Update Homebrew Cask` workflow to open or update an automatic cask PR against the default branch.
 4. Confirm the GitHub release contains:
    - `Bifrost-<version>-arm64-mac.zip`
    - `Bifrost-<version>-arm64-mac.zip.blockmap`
@@ -40,4 +40,4 @@
 
 2. Launch Bifrost and confirm the first-run Gatekeeper override instructions still match the actual behavior.
 3. Merge the automated cask PR before validating Homebrew install.
-4. If the workflow failed before opening the cask PR, do not retag immediately. Fix the workflow or cask generation issue first, then cut the next patch release.
+4. If the cask workflow failed before opening the PR, do not retag immediately. Fix the workflow or cask generation issue first, then cut the next patch release.
