@@ -55,7 +55,7 @@ function resolveRepo() {
 
 function renderCask({ owner, repo, currentVersion, armSha256, intelSha256 }) {
   return `cask "bifrost" do
-  arch arm: "arm64", intel: "mac"
+  arch arm: "arm64-mac", intel: "mac"
 
   version "${currentVersion}"
   sha256 arm: "${armSha256}", intel: "${intelSha256}"
