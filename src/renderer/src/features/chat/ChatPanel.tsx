@@ -1,4 +1,4 @@
-import type { Message } from '../../types'
+import type { ConnectionState, Message } from '../../types'
 import { MessageList } from './MessageList'
 import { InputBox } from './InputBox'
 import { ToolApprovalBanner } from './ToolApprovalBanner'
@@ -12,7 +12,7 @@ interface Props {
   onAnswerQuestion?: (toolUseId: string, answer: string) => void
   onOpenFile?: (filePath: string) => void
   theme: 'light' | 'dark'
-  disabled: boolean
+  connectionState: ConnectionState
   model: string
   onModelChange: (model: string) => void
   hasSession?: boolean
@@ -28,7 +28,7 @@ export function ChatPanel({
   onAnswerQuestion,
   onOpenFile,
   theme,
-  disabled,
+  connectionState,
   model,
   onModelChange,
   hasSession,
@@ -45,7 +45,14 @@ export function ChatPanel({
         />
       )}
       <MessageList messages={messages} theme={theme} onSend={onSend} onAnswerQuestion={onAnswerQuestion} onOpenFile={onOpenFile} hasSession={hasSession} onNewSession={onNewSession} />
-      {hasSession && <InputBox onSend={onSend} disabled={disabled} model={model} onModelChange={onModelChange} />}
+      {hasSession && (
+        <InputBox
+          onSend={onSend}
+          connectionState={connectionState}
+          model={model}
+          onModelChange={onModelChange}
+        />
+      )}
     </div>
   )
 }

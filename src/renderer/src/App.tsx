@@ -305,7 +305,7 @@ export default function App() {
                     onAnswerQuestion={claude.answerQuestion}
                     onOpenFile={openPlanReview}
                     theme={theme}
-                    disabled={claude.connectionState !== 'active'}
+                    connectionState={claude.connectionState}
                     model={model}
                     hasSession={!!claude.projectPath}
                     onNewSession={handleNewSession}

@@ -128,6 +128,7 @@ export type ContentBlock =
 export type CLIEvent =
   | { type: 'system'; subtype: 'init'; session_id: string; tools: string[] }
   | { type: 'system'; subtype: 'status'; message: string }
+  | { type: 'error'; error: string }
   | { type: 'assistant'; message: { content: ContentBlock[] } }
   | { type: 'stream_event'; subtype: 'content_block_delta'; delta: { text?: string } }
   | { type: 'tool_progress'; tool_name: string; progress: string }

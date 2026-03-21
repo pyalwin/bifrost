@@ -106,8 +106,19 @@ brew install --cask pyalwin/bifrost/bifrost
 
 The tap is hosted in this repository, so the full GitHub URL is required when tapping.
 
-If macOS blocks the first launch, open **System Settings > Privacy & Security** and click
-**Open Anyway** for Bifrost. That approval is only needed once per Mac.
+Because Bifrost is currently distributed without Apple Developer ID signing or notarization,
+macOS will usually block the first launch with a message like:
+
+> Apple could not verify "Bifrost" is free of malware that may harm your Mac or compromise your privacy.
+
+If that happens:
+
+1. Try to open `Bifrost.app`
+2. Open **System Settings > Privacy & Security**
+3. Click **Open Anyway** for Bifrost
+4. Confirm the follow-up prompt
+
+That approval is only needed once per Mac.
 
 ## Tech Stack
 

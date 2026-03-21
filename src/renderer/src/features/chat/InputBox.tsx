@@ -1,6 +1,7 @@
 import { useState, useRef, KeyboardEvent } from 'react'
 import { Plus, ChevronDown, ArrowUp, Check } from 'lucide-react'
 import { cn } from '../../lib/utils'
+import type { ConnectionState } from '../../types'
 
 const MODELS = [
   { id: 'opus', label: 'Claude Opus 4.6', description: 'Most capable' },
@@ -10,12 +11,26 @@ const MODELS = [
 
 interface Props {
   onSend: (text: string, images?: Array<{ base64: string; mediaType: string; name: string }>) => void
-  disabled?: boolean
+  connectionState: ConnectionState
   model: string
   onModelChange: (model: string) => void
 }
 
-export function InputBox({ onSend, disabled = false, model, onModelChange }: Props) {
+function getPlaceholder(connectionState: ConnectionState): string {
+  switch (connectionState) {
+    case 'connecting':
+      return 'Connecting...'
+    case 'disconnected':
+      return 'Disconnected. Reconnect or start a new session.'
+    case 'idle':
+      return 'Session unavailable. Check Claude CLI logs.'
+    case 'active':
+    default:
+      return 'Ask Claude anything'
+  }
+}
+
+export function InputBox({ onSend, connectionState, model, onModelChange }: Props) {
   const [value, setValue] = useState('')
   const [showModelPicker, setShowModelPicker] = useState(false)
   const [attachments, setAttachments] = useState<Array<{ base64: string; mediaType: string; name: string }>>([])
@@ -24,6 +39,7 @@ export function InputBox({ onSend, disabled = false, model, onModelChange }: Pro
 
   const MAX_IMAGES = 20
   const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp']
+  const disabled = connectionState !== 'active'
 
   const selectedModel = MODELS.find(m => m.id === model) ?? MODELS[0]
 
@@ -102,7 +118,7 @@ export function InputBox({ onSend, disabled = false, model, onModelChange }: Pro
               addFiles(files)
             }
           }}
-          placeholder={disabled ? 'Connecting...' : 'Ask Claude anything'}
+          placeholder={getPlaceholder(connectionState)}
           disabled={disabled}
           rows={1}
           className="w-full px-4 pt-3.5 pb-2 text-sm bg-transparent resize-none outline-none placeholder:text-muted-foreground/60 disabled:opacity-50 disabled:cursor-not-allowed"

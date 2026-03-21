@@ -278,6 +278,17 @@ export function useClaude(): UseClaudeReturn {
           // Ignore system/keepalive events
           break
 
+        case 'error': {
+          finalizeTurn()
+          setConnectionState('idle')
+          setMessages(prev => [...prev, {
+            id: `msg-${++messageIdCounter.current}`,
+            role: 'assistant',
+            content: `Connection error: ${event.error}`,
+          }])
+          break
+        }
+
         default: {
           // Handle progress events with agent child tools
           const rawEvent = event as any
@@ -408,6 +419,7 @@ export function useClaude(): UseClaudeReturn {
     setMessages([])
     setDiffs([])
     setProjectPath(workingDir)
+    setConnectionState('connecting')
     currentTurnId.current = null
     isInTurn.current = false
 
@@ -425,6 +437,7 @@ export function useClaude(): UseClaudeReturn {
     setMessages([])
     setDiffs([])
     setProjectPath(workingDir)
+    setConnectionState('connecting')
     currentTurnId.current = null
     isInTurn.current = false
     try {
@@ -440,6 +453,7 @@ export function useClaude(): UseClaudeReturn {
     setMessages([])
     setDiffs([])
     setProjectPath(workingDir)
+    setConnectionState('connecting')
     currentTurnId.current = null
     isInTurn.current = false
     try {
