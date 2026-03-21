@@ -164,18 +164,18 @@ npm run build        # Production build
 
 ### Refresh Homebrew Cask
 
-Build the macOS zip artifacts, then regenerate the Homebrew cask with current version and hashes:
+For a local dry run, build the macOS zip artifacts and regenerate the Homebrew cask from those local files:
 
 ```bash
 npm run build:mac
 npm run generate:cask
 ```
 
-This updates `Casks/bifrost.rb` using the local zip artifacts and the GitHub `origin` remote.
+This updates `Casks/bifrost.rb` using the local zip artifacts and the GitHub `origin` remote. The release workflow does this again in CI and pushes the final cask update automatically so the published tap matches the release assets.
 
 ### GitHub Release Flow
 
-Push a tag like `v1.0.1` after committing the updated version and cask. The GitHub Actions workflow in `.github/workflows/release.yml` builds the macOS zip artifacts, verifies `Casks/bifrost.rb` is current for that tag, and publishes the zip files to the GitHub release automatically.
+Push a tag like `v1.0.3` after committing the updated version. The GitHub Actions workflow in `.github/workflows/release.yml` builds the macOS zip artifacts, regenerates `Casks/bifrost.rb` from the CI-built release artifacts, opens a PR with the cask update, and publishes the zip files to the GitHub release automatically.
 
 For the full manual checklist, see `docs/release-checklist.md`.
 
