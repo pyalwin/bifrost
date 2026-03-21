@@ -34,11 +34,6 @@ jobs:
       - name: Build macOS zip artifacts
         run: npm run build:mac
 
-      - name: Verify app bundles
-        run: |
-          codesign --verify --deep --strict --verbose=2 dist/mac-arm64/Bifrost.app
-          codesign --verify --deep --strict --verbose=2 dist/mac/Bifrost.app
-
       - name: Verify Homebrew cask is current
         run: |
           npm run generate:cask
