@@ -1,8 +1,8 @@
 cask "bifrost" do
   arch arm: "arm64-mac", intel: "mac"
 
-  version "1.0.2"
-  sha256 arm: "042db82e761e36f81ff22ce3c4a74729b95e0d458b5bac180bf8525efff77038", intel: "2c0ded3e44b395ce652ece6bc21c885cf8dc344caeb609de0579d992333c99e3"
+  version "1.0.4"
+  sha256 arm: "8c8fbf0dd1b8d779ac8d19b1537e75bfad99a534efb61d123e9ec557d030289f", intel: "d3ec5fedfff4c545a7bae655d5791456630957aa55515a135688ccfe1a5f9875"
 
   url "https://github.com/pyalwin/bifrost/releases/download/v#{version}/Bifrost-#{version}-#{arch}.zip"
   name "Bifrost"
