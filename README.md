@@ -97,6 +97,18 @@ npm run dev
 
 Click **New thread** in the sidebar, select a project directory, and start chatting.
 
+### Install With Homebrew
+
+```bash
+brew tap pyalwin/bifrost https://github.com/pyalwin/bifrost
+brew install --cask pyalwin/bifrost/bifrost
+```
+
+The tap is hosted in this repository, so the full GitHub URL is required when tapping.
+
+If macOS blocks the first launch, open **System Settings > Privacy & Security** and click
+**Open Anyway** for Bifrost. That approval is only needed once per Mac.
+
 ## Tech Stack
 
 | Layer | Technology | Purpose |
@@ -147,6 +159,19 @@ npm run typecheck    # Type check (node + web)
 npm run lint         # ESLint
 npm run build        # Production build
 ```
+
+## Release
+
+### Refresh Homebrew Cask
+
+Build the macOS zip artifacts, then regenerate the Homebrew cask with current version and hashes:
+
+```bash
+npm run build:mac
+npm run generate:cask
+```
+
+This updates `Casks/bifrost.rb` using the local zip artifacts and the GitHub `origin` remote.
 
 ## Contributing
 

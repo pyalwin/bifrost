@@ -2,6 +2,7 @@ appId: com.bifrost.app
 productName: Bifrost
 directories:
   buildResources: build
+afterPack: build/after-pack.cjs
 files:
   - '!**/.vscode/*'
   - '!src/*'
@@ -16,10 +17,6 @@ mac:
   icon: build/icon.icns
   category: public.app-category.developer-tools
   target:
-    - target: dmg
-      arch:
-        - arm64
-        - x64
     - target: zip
       arch:
         - arm64
@@ -32,17 +29,6 @@ mac:
   hardenedRuntime: false
   gatekeeperAssess: false
   identity: null
-dmg:
-  artifactName: Bifrost-${version}-${arch}.${ext}
-  icon: build/icon.icns
-  title: Bifrost
-  contents:
-    - x: 130
-      y: 220
-    - x: 410
-      y: 220
-      type: link
-      path: /Applications
 win:
   executableName: bifrost
   icon: build/icon.ico
