@@ -69,12 +69,10 @@ function setupGitWatcher(workingDir: string): void {
   gitWatcher = new GitWatcher(workingDir)
 
   gitWatcher.on('diff-update', (diffs) => {
-    console.log(`[Main] Sending ${(diffs as any[]).length} diffs to renderer`)
     safeSend('claude:diff-update', diffs)
   })
 
   gitWatcher.on('branch-change', (branch) => {
-    console.log(`[Main] Branch changed to: ${branch}`)
     safeSend('claude:branch-change', branch)
   })
 
@@ -169,8 +167,8 @@ function registerIpcHandlers(): void {
     }
   )
 
-  ipcMain.handle('claude:send-message', async (_event, text: string, images?: Array<{ base64: string; mediaType: string }>) => {
-    await sessionManager.sendMessage(text, images)
+  ipcMain.handle('claude:send-message', async (_event, text: string, images?: Array<{ base64: string; mediaType: string }>, model?: string) => {
+    await sessionManager.sendMessage(text, images, model)
   })
 
   ipcMain.handle(
@@ -194,6 +192,10 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('claude:list-projects', async () => {
     return discoverProjects()
+  })
+
+  ipcMain.handle('claude:set-model', async (_event, model: string) => {
+    await sessionManager.setModel(model)
   })
 
   ipcMain.handle('claude:list-sessions-grouped', async () => {
@@ -343,6 +345,34 @@ function registerIpcHandlers(): void {
       const staged = execSync('git diff --cached', { cwd: workingDir, encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 }).trim()
       const combined = (unstaged + '\n' + staged).trim()
       return parseUnifiedDiff(combined)
+    } catch {
+      return []
+    }
+  })
+
+  ipcMain.handle('claude:get-head-sha', async () => {
+    const workingDir = sessionManager.workingDir
+    if (!workingDir) return null
+    try {
+      const { execSync } = await import('child_process')
+      return execSync('git rev-parse HEAD', { cwd: workingDir, encoding: 'utf-8' }).trim()
+    } catch {
+      return null
+    }
+  })
+
+  ipcMain.handle('claude:get-diff-since', async (_event, sha: string) => {
+    const workingDir = sessionManager.workingDir
+    if (!workingDir) return []
+    try {
+      const { execSync } = await import('child_process')
+      const { parseUnifiedDiff } = await import('./diff-parser')
+      const diff = execSync(`git diff ${sha}`, {
+        cwd: workingDir,
+        encoding: 'utf-8',
+        maxBuffer: 10 * 1024 * 1024,
+      }).trim()
+      return diff ? parseUnifiedDiff(diff) : []
     } catch {
       return []
     }
@@ -722,16 +752,13 @@ function forwardSessionEvents(): void {
     // Refresh diffs after edit tools or when a turn completes
     if (event.type === 'tool_use_summary') {
       const toolName = (event.tool_name ?? event.tool ?? '') as string
-      console.log(`[Main] tool_use_summary: ${toolName}`)
       if (EDIT_TOOLS.has(toolName)) {
-        console.log('[Main] Edit tool detected, forcing git refresh')
         gitWatcher?.forceRefresh()
       }
     }
 
     // Always refresh diffs when a turn completes — catches any file changes
     if (event.type === 'result') {
-      console.log('[Main] Turn complete, refreshing diffs')
       setTimeout(() => gitWatcher?.forceRefresh(), 500)
     }
   })

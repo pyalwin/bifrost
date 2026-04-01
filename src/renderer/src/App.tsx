@@ -12,6 +12,7 @@ import { CreatePRDialog } from './features/pr/CreatePRDialog'
 import { PlanReview } from './features/plan/PlanReview'
 import { CommitsView } from './features/commits/CommitsView'
 import { ReviewsView } from './features/reviews/ReviewsView'
+import { ReviewDetailPanel } from './features/reviews/ReviewDetailPanel'
 import { CommitDialog } from './features/git/CommitDialog'
 
 export default function App() {
@@ -112,29 +113,34 @@ export default function App() {
     try {
       const dir = await window.claude?.selectDirectory()
       if (dir) {
-        await claude.startSession(dir)
+        await claude.startSession(dir, model)
+        setActiveTab('conversation')
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       console.error('[App] Failed to start session:', message)
       setSessionError(message)
     }
-  }, [claude])
+  }, [claude, model])
 
   const handleSubmitReview = useCallback(async (review: Review) => {
-    // Store the review for tracking
-    setReviews(prev => [...prev, review])
+    // Capture HEAD SHA so the next review can show only what changed since this one
+    const reviewedAtSha = await window.claude?.getHeadSha?.() ?? undefined
+    setReviews(prev => [...prev, { ...review, reviewedAtSha }])
     setActiveReviewId(review.id)
 
     const workingDir = claude.projectPath
     if (!workingDir) return
 
-    // Build the review context message
+    // Build the review context message — only include unresolved comments
+    const unresolvedComments = review.comments.filter(c => !c.resolved)
     const commentsByFile = new Map<string, typeof review.comments>()
-    for (const c of review.comments) {
+    for (const c of unresolvedComments) {
       const existing = commentsByFile.get(c.filename) ?? []
       commentsByFile.set(c.filename, [...existing, c])
     }
+
+    if (commentsByFile.size === 0) return
 
     let message = `Please address the following code review comments:\n\n`
     for (const [filename, comments] of commentsByFile) {
@@ -146,21 +152,22 @@ export default function App() {
     }
     message += `Please fix each issue and explain what you changed.`
 
-    await claude.startReviewSession(workingDir, message)
+    await claude.startReviewSession(workingDir, message, model)
     // Switch to conversation tab to show the discussion
     setActiveTab('conversation')
-  }, [claude, setActiveTab])
+  }, [claude, model, setActiveTab])
 
   const handleResumeSession = useCallback(async (sessionId: string, workingDir: string) => {
     setSessionError(null)
     try {
-      await claude.resumeSession(sessionId, workingDir)
+      await claude.resumeSession(sessionId, workingDir, model)
+      setActiveTab('conversation')
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       console.error('[App] Failed to resume session:', message)
       setSessionError(message)
     }
-  }, [claude])
+  }, [claude, model, setActiveTab])
 
   const handleCreatePR = useCallback(async (title: string, body: string) => {
     setPrCreating(true)
@@ -203,8 +210,8 @@ export default function App() {
       }
     }
     setPlanReview(null)
-    claude.sendMessage(message)
-  }, [claude])
+    claude.sendMessage(message, undefined, model)
+  }, [claude, model])
 
   const handlePlanRevise = useCallback((comments: PlanComment[]) => {
     let message = 'Please revise the plan based on these review comments:\n\n'
@@ -213,14 +220,16 @@ export default function App() {
     }
     message += '\nUpdate the plan file and re-open it for review.'
     setPlanReview(null)
-    claude.sendMessage(message)
-  }, [claude])
+    claude.sendMessage(message, undefined, model)
+  }, [claude, model])
 
   // Compute diff stats for tab bar
   const diffStats = {
     additions: claude.diffs.reduce((sum, f) => sum + f.additions, 0),
     deletions: claude.diffs.reduce((sum, f) => sum + f.deletions, 0),
   }
+
+  const lastReviewSha = [...reviews].reverse().find(r => r.reviewedAtSha)?.reviewedAtSha
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground">
@@ -273,14 +282,16 @@ export default function App() {
 
         {/* Right work pane — tab bar + content, always in the same position */}
         <div className="flex-1 flex flex-col min-w-0">
-          <MainTabBar
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            filesCount={claude.diffs.length}
-            reviewCount={reviews.length}
-            diffStats={diffStats}
-            disabled={!claude.projectPath}
-          />
+          {claude.hasConversationStarted && (
+            <MainTabBar
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              filesCount={claude.diffs.length}
+              reviewCount={reviews.length}
+              diffStats={diffStats}
+              disabled={!claude.projectPath}
+            />
+          )}
           <div className="flex-1 overflow-hidden">
             {/* Conversation tab */}
             {activeTab === 'conversation' && (
@@ -301,7 +312,7 @@ export default function App() {
                     pendingApproval={claude.pendingApproval}
                     onApprove={(id) => claude.approveRequest(id)}
                     onDeny={(id) => claude.denyRequest(id)}
-                    onSend={claude.sendMessage}
+                    onSend={(text, images) => claude.sendMessage(text, images, model)}
                     onAnswerQuestion={claude.answerQuestion}
                     onOpenFile={openPlanReview}
                     theme={theme}
@@ -309,7 +320,12 @@ export default function App() {
                     model={model}
                     hasSession={!!claude.projectPath}
                     onNewSession={handleNewSession}
-                    onModelChange={(m) => { setModel(m); localStorage.setItem('bifrost-model', m) }}
+                    onModelChange={(m) => {
+                      if (m === model) return
+                      setModel(m)
+                      localStorage.setItem('bifrost-model', m)
+                      window.claude?.setModel(m)
+                    }}
                   />
                 )}
               </div>
@@ -320,9 +336,6 @@ export default function App() {
               <FilesChangedView
                 files={claude.diffs}
                 theme={theme}
-                reviews={reviews}
-                activeReviewId={activeReviewId}
-                onSelectReview={setActiveReviewId}
                 onSubmitReview={handleSubmitReview}
                 selectedFile={selectedFile}
                 hasUncommitted={gitStatus.hasUncommitted}
@@ -330,6 +343,7 @@ export default function App() {
                 onAddReviewComment={handleAddReviewComment}
                 onRemoveReviewComment={handleRemoveReviewComment}
                 onResolveReviewComment={handleResolveReviewComment}
+                lastReviewSha={lastReviewSha}
               />
             )}
 
@@ -339,20 +353,47 @@ export default function App() {
             )}
 
             {/* Reviews tab */}
-            {activeTab === 'reviews' && (
-              <ReviewsView
-                reviews={reviews}
-                onStartNewReview={() => setActiveTab('files')}
-                onSelectReview={(id) => { setActiveReviewId(id); setActiveTab('conversation') }}
-              />
-            )}
+            {activeTab === 'reviews' && (() => {
+              const activeReview = activeReviewId ? reviews.find(r => r.id === activeReviewId) : null
+              const activeReviewIndex = activeReviewId ? reviews.findIndex(r => r.id === activeReviewId) : -1
+              if (activeReview) {
+                const reviewComments = allReviewComments.filter(c =>
+                  activeReview.comments.some(rc => rc.id === c.id)
+                )
+                return (
+                  <ReviewDetailPanel
+                    review={activeReview}
+                    reviewIndex={activeReviewIndex}
+                    comments={reviewComments}
+                    onBack={() => setActiveReviewId(null)}
+                    onResolveComment={handleResolveReviewComment}
+                    onSendFollowUp={(msg) => {
+                      claude.sendMessage(msg, undefined, model)
+                      setActiveTab('conversation')
+                    }}
+                    onNavigateToFile={(filename) => {
+                      setSelectedFile(filename)
+                      setActiveTab('files')
+                    }}
+                  />
+                )
+              }
+              return (
+                <ReviewsView
+                  reviews={reviews}
+                  allComments={allReviewComments}
+                  onStartNewReview={() => setActiveTab('files')}
+                  onSelectReview={(id) => setActiveReviewId(id)}
+                />
+              )
+            })()}
           </div>
         </div>
       </div>
       {showCreatePR && (
         <CreatePRDialog
           branchName={claude.branch || ''}
-          baseBranch="main"
+          baseBranch={null}
           onSubmit={handleCreatePR}
           onCancel={() => { setShowCreatePR(false); setPrError(null) }}
           isSubmitting={prCreating}
