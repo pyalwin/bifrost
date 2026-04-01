@@ -7,11 +7,12 @@ interface UseClaudeReturn {
   diffs: DiffFileData[]
   branch: string
   projectPath: string
+  hasConversationStarted: boolean
   pendingApproval: { id: string; toolName: string; input: Record<string, unknown> } | null
-  startSession: (workingDir: string) => Promise<void>
-  startReviewSession: (workingDir: string, reviewMessage: string) => Promise<void>
-  resumeSession: (sessionId: string, workingDir: string) => Promise<void>
-  sendMessage: (text: string, images?: Array<{ base64: string; mediaType: string; name: string }>) => void
+  startSession: (workingDir: string, model?: string) => Promise<void>
+  startReviewSession: (workingDir: string, reviewMessage: string, model?: string) => Promise<void>
+  resumeSession: (sessionId: string, workingDir: string, model?: string) => Promise<void>
+  sendMessage: (text: string, images?: Array<{ base64: string; mediaType: string; name: string }>, model?: string) => void
   answerQuestion: (toolUseId: string, answer: string) => void
   cancelTurn: () => void
   approveRequest: (id: string) => void
@@ -24,6 +25,7 @@ export function useClaude(): UseClaudeReturn {
   const [diffs, setDiffs] = useState<DiffFileData[]>([])
   const [branch, setBranch] = useState('')
   const [projectPath, setProjectPath] = useState('')
+  const [hasConversationStarted, setHasConversationStarted] = useState(false)
   const [pendingApproval, setPendingApproval] = useState<UseClaudeReturn['pendingApproval']>(null)
 
   const messageIdCounter = useRef(0)
@@ -371,14 +373,17 @@ export function useClaude(): UseClaudeReturn {
     const unsubHistory = window.claude.onHistory?.((historyMessages) => {
       console.log('[useClaude] Received history:', (historyMessages as Message[]).length, 'messages')
       setMessages(historyMessages as Message[])
+      setHasConversationStarted(true)
     })
 
     return () => { unsubMessage(); unsubState(); unsubDiff(); unsubBranch(); unsubHistory?.() }
   }, [startTurn, finalizeTurn, updateCurrentMessage])
 
-  const sendMessage = useCallback((text: string, images?: Array<{ base64: string; mediaType: string; name: string }>) => {
+  const sendMessage = useCallback((text: string, images?: Array<{ base64: string; mediaType: string; name: string }>, model?: string) => {
     // Finalize any in-progress turn before starting a new user message
     if (isInTurn.current) finalizeTurn()
+
+    setHasConversationStarted(true)
 
     // Add user message
     setMessages(prev => [...prev, {
@@ -391,10 +396,10 @@ export function useClaude(): UseClaudeReturn {
     // Immediately start the assistant turn so thinking indicator shows instantly
     startTurn()
 
-    window.claude?.sendMessage(text, images)
+    window.claude?.sendMessage(text, images, model)
   }, [finalizeTurn, startTurn])
 
-  const answerQuestion = useCallback((toolUseId: string, answer: string) => {
+  const answerQuestion = useCallback((_toolUseId: string, answer: string) => {
     // Clear the question from the message
     updateCurrentMessage(m => ({
       ...m,
@@ -415,33 +420,35 @@ export function useClaude(): UseClaudeReturn {
     window.claude?.sendMessage(answer)
   }, [updateCurrentMessage])
 
-  const startReviewSession = useCallback(async (workingDir: string, reviewMessage: string) => {
+  const startReviewSession = useCallback(async (workingDir: string, reviewMessage: string, model?: string) => {
     setMessages([])
     setDiffs([])
     setProjectPath(workingDir)
+    setHasConversationStarted(true)
     setConnectionState('connecting')
     currentTurnId.current = null
     isInTurn.current = false
 
     try {
-      await window.claude?.startSession(workingDir)
+      await window.claude?.startSession(workingDir, model)
       // Send the review context as the first message after connection
-      setTimeout(() => sendMessage(reviewMessage), 500)
+      setTimeout(() => sendMessage(reviewMessage, undefined, model), 500)
     } catch (err) {
       console.error('[useClaude] startReviewSession failed:', err)
       setConnectionState('idle')
     }
   }, [sendMessage])
 
-  const startSession = useCallback(async (workingDir: string) => {
+  const startSession = useCallback(async (workingDir: string, model?: string) => {
     setMessages([])
     setDiffs([])
     setProjectPath(workingDir)
+    setHasConversationStarted(false)
     setConnectionState('connecting')
     currentTurnId.current = null
     isInTurn.current = false
     try {
-      await window.claude?.startSession(workingDir)
+      await window.claude?.startSession(workingDir, model)
     } catch (err) {
       console.error('[useClaude] startSession failed:', err)
       setConnectionState('idle')
@@ -449,15 +456,16 @@ export function useClaude(): UseClaudeReturn {
     }
   }, [])
 
-  const resumeSession = useCallback(async (sessionId: string, workingDir: string) => {
+  const resumeSession = useCallback(async (sessionId: string, workingDir: string, model?: string) => {
     setMessages([])
     setDiffs([])
     setProjectPath(workingDir)
+    setHasConversationStarted(true)
     setConnectionState('connecting')
     currentTurnId.current = null
     isInTurn.current = false
     try {
-      await window.claude?.resumeSession(sessionId, workingDir)
+      await window.claude?.resumeSession(sessionId, workingDir, model)
     } catch (err) {
       console.error('[useClaude] resumeSession failed:', err)
       setConnectionState('idle')
@@ -481,7 +489,7 @@ export function useClaude(): UseClaudeReturn {
   }, [])
 
   return {
-    connectionState, messages, diffs, branch, projectPath, pendingApproval,
+    connectionState, messages, diffs, branch, projectPath, hasConversationStarted, pendingApproval,
     startSession, startReviewSession, resumeSession, sendMessage, answerQuestion, cancelTurn, approveRequest, denyRequest,
   }
 }

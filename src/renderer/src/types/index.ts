@@ -54,6 +54,7 @@ export interface Review {
   status: 'drafting' | 'submitted' | 'in-progress' | 'done'
   createdAt: number
   sessionId?: string
+  reviewedAtSha?: string
 }
 
 export interface DiffHunk {
@@ -164,18 +165,22 @@ export interface PullRequest {
 }
 
 export interface ClaudeAPI {
-  startSession(workingDir: string): Promise<void>
-  resumeSession(sessionId: string, workingDir: string): Promise<void>
+  startSession(workingDir: string, model?: string): Promise<void>
+  resumeSession(sessionId: string, workingDir: string, model?: string): Promise<void>
   listSessions(): Promise<SessionInfo[]>
   listSessionsGrouped(): Promise<ProjectHierarchy[]>
+  listSessionsForDir(workingDir: string): Promise<SessionInfo[]>
+  listProjects(): Promise<Array<{ name: string; workingDir: string; sessionCount: number; lastActive: number }>>
+  setModel(model: string): Promise<void>
   cancelTurn(): Promise<void>
-  sendMessage(text: string, images?: ImageAttachment[]): Promise<void>
+  sendMessage(text: string, images?: ImageAttachment[], model?: string): Promise<void>
   selectImages(): Promise<ImageAttachment[]>
   sendControlResponse(requestId: string, approved: boolean): Promise<void>
   onMessage(callback: (event: CLIEvent) => void): () => void
   onConnectionStateChange(callback: (state: ConnectionState) => void): () => void
   onDiffUpdate(callback: (diffs: DiffFileData[]) => void): () => void
   onBranchChange(callback: (branch: string) => void): () => void
+  onHistory(callback: (messages: Message[]) => void): () => void
   selectDirectory(): Promise<string | null>
   archiveItem(type: 'project' | 'session', id: string): Promise<void>
   unarchiveItem(type: 'project' | 'session', id: string): Promise<void>
@@ -183,6 +188,8 @@ export interface ClaudeAPI {
   saveReviews(data: { reviews: Review[]; comments: ReviewComment[] }): Promise<void>
   loadReviews(): Promise<{ reviews: Review[]; comments: ReviewComment[] }>
   getLocalDiffs(): Promise<DiffFileData[]>
+  getHeadSha(): Promise<string | null>
+  getDiffSince(sha: string): Promise<DiffFileData[]>
   generateCommitMessage(): Promise<string>
   getStagedFiles(): Promise<{ staged: string[]; unstaged: string[] }>
   stageAll(): Promise<void>

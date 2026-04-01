@@ -52,7 +52,7 @@ function CommentInput({ onSave, onCancel }: { onSave: (text: string) => void; on
   )
 }
 
-export function PlanReview({ title, filePath, content, theme, onClose, onApprove, onRevise }: Props) {
+export function PlanReview({ title, filePath, content, theme: _theme, onClose, onApprove, onRevise }: Props) {
   const [comments, setComments] = useState<PlanComment[]>([])
   const [commentingBlock, setCommentingBlock] = useState<number | null>(null)
   const gitUser = useGitUser()

@@ -1,17 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import type { DiffFileData, Review, ReviewComment } from '../../types'
 import { DiffPanel } from './DiffPanel'
-import { ReviewTabsBar } from './ReviewTabsBar'
 import { cn } from '../../lib/utils'
 
-export type DiffMode = 'all' | 'local'
+export type DiffMode = 'all' | 'local' | 'since-review'
 
 interface Props {
   files: DiffFileData[]
   theme: 'light' | 'dark'
-  reviews: Review[]
-  activeReviewId: string | null
-  onSelectReview: (id: string) => void
   onSubmitReview: (review: Review) => void
   selectedFile?: string | null
   hasUncommitted?: boolean
@@ -19,14 +15,24 @@ interface Props {
   onAddReviewComment?: (comment: ReviewComment) => void
   onRemoveReviewComment?: (id: string) => void
   onResolveReviewComment?: (id: string) => void
+  lastReviewSha?: string
 }
 
-export function FilesChangedView({ files, theme, reviews, activeReviewId, onSelectReview, onSubmitReview, selectedFile, hasUncommitted, reviewComments, onAddReviewComment, onRemoveReviewComment, onResolveReviewComment }: Props) {
-  const [diffMode, setDiffMode] = useState<DiffMode>(hasUncommitted ? 'local' : 'all')
+export function FilesChangedView({ files, theme, onSubmitReview, selectedFile, hasUncommitted, reviewComments, onAddReviewComment, onRemoveReviewComment, onResolveReviewComment, lastReviewSha }: Props) {
+  const defaultMode: DiffMode = lastReviewSha ? 'since-review' : (hasUncommitted ? 'local' : 'all')
+  const [diffMode, setDiffMode] = useState<DiffMode>(defaultMode)
   const [localFiles, setLocalFiles] = useState<DiffFileData[]>([])
+  const [sinceReviewFiles, setSinceReviewFiles] = useState<DiffFileData[]>([])
   const [loadingLocal, setLoadingLocal] = useState(false)
+  const [loadingSinceReview, setLoadingSinceReview] = useState(false)
 
-  // Fetch local diffs only when switching to local mode (not on every files change)
+  // Switch to since-review mode when a lastReviewSha becomes available
+  useEffect(() => {
+    if (lastReviewSha) {
+      setDiffMode('since-review')
+    }
+  }, [lastReviewSha])
+
   const filesRef = useRef(files)
   filesRef.current = files
 
@@ -44,13 +50,31 @@ export function FilesChangedView({ files, theme, reviews, activeReviewId, onSele
     }
   }, [diffMode])
 
-  const activeFiles = diffMode === 'local' ? localFiles : files
+  useEffect(() => {
+    if (diffMode !== 'since-review' || !lastReviewSha) return
+    setLoadingSinceReview(true)
+    if (typeof window.claude?.getDiffSince === 'function') {
+      window.claude.getDiffSince(lastReviewSha)
+        .then(f => setSinceReviewFiles(f ?? []))
+        .catch(() => setSinceReviewFiles(filesRef.current))
+        .finally(() => setLoadingSinceReview(false))
+    } else {
+      setSinceReviewFiles(filesRef.current)
+      setLoadingSinceReview(false)
+    }
+  }, [diffMode, lastReviewSha])
 
-  // Sort and filter
+  const activeFiles =
+    diffMode === 'local' ? localFiles :
+    diffMode === 'since-review' ? sinceReviewFiles :
+    files
+
   const sortedFiles = [...activeFiles].sort((a, b) => a.filename.localeCompare(b.filename))
   const displayFiles = selectedFile
     ? sortedFiles.filter(f => f.filename === selectedFile)
     : sortedFiles
+
+  const isLoading = (diffMode === 'local' && loadingLocal) || (diffMode === 'since-review' && loadingSinceReview)
 
   return (
     <div className="h-full flex flex-col">
@@ -65,6 +89,17 @@ export function FilesChangedView({ files, theme, reviews, activeReviewId, onSele
           >
             Uncommitted
           </button>
+          {lastReviewSha && (
+            <button
+              onClick={() => setDiffMode('since-review')}
+              className={cn(
+                'px-2.5 py-1 text-[11px] font-medium transition-colors',
+                diffMode === 'since-review' ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              Since last review
+            </button>
+          )}
           <button
             onClick={() => setDiffMode('all')}
             className={cn(
@@ -75,17 +110,15 @@ export function FilesChangedView({ files, theme, reviews, activeReviewId, onSele
             All changes
           </button>
         </div>
-        <ReviewTabsBar
-          reviews={reviews}
-          activeReviewId={activeReviewId}
-          onSelectReview={onSelectReview}
-          onStartNewReview={() => {}}
-        />
       </div>
       <div className="flex-1 overflow-hidden">
-        {loadingLocal ? (
+        {isLoading ? (
           <div className="h-full flex items-center justify-center text-muted-foreground text-[13px]">
-            Loading local changes...
+            Loading changes...
+          </div>
+        ) : displayFiles.length === 0 && diffMode === 'since-review' ? (
+          <div className="h-full flex items-center justify-center text-muted-foreground text-[13px]">
+            No changes since last review
           </div>
         ) : (
           <DiffPanel files={displayFiles} theme={theme} onSubmitReview={onSubmitReview} reviewComments={reviewComments} onAddReviewComment={onAddReviewComment} onRemoveReviewComment={onRemoveReviewComment} onResolveReviewComment={onResolveReviewComment} />

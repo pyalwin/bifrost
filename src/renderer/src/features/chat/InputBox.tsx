@@ -14,9 +14,13 @@ interface Props {
   connectionState: ConnectionState
   model: string
   onModelChange: (model: string) => void
+  isSwitchingModel?: boolean
 }
 
-function getPlaceholder(connectionState: ConnectionState): string {
+function getPlaceholder(connectionState: ConnectionState, isSwitchingModel: boolean): string {
+  if (isSwitchingModel) {
+    return 'Switching model...'
+  }
   switch (connectionState) {
     case 'connecting':
       return 'Connecting...'
@@ -30,7 +34,7 @@ function getPlaceholder(connectionState: ConnectionState): string {
   }
 }
 
-export function InputBox({ onSend, connectionState, model, onModelChange }: Props) {
+export function InputBox({ onSend, connectionState, model, onModelChange, isSwitchingModel = false }: Props) {
   const [value, setValue] = useState('')
   const [showModelPicker, setShowModelPicker] = useState(false)
   const [attachments, setAttachments] = useState<Array<{ base64: string; mediaType: string; name: string }>>([])
@@ -39,7 +43,7 @@ export function InputBox({ onSend, connectionState, model, onModelChange }: Prop
 
   const MAX_IMAGES = 20
   const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp']
-  const disabled = connectionState !== 'active'
+  const disabled = connectionState !== 'active' || isSwitchingModel
 
   const selectedModel = MODELS.find(m => m.id === model) ?? MODELS[0]
 
@@ -118,7 +122,7 @@ export function InputBox({ onSend, connectionState, model, onModelChange }: Prop
               addFiles(files)
             }
           }}
-          placeholder={getPlaceholder(connectionState)}
+          placeholder={getPlaceholder(connectionState, isSwitchingModel)}
           disabled={disabled}
           rows={1}
           className="w-full px-4 pt-3.5 pb-2 text-sm bg-transparent resize-none outline-none placeholder:text-muted-foreground/60 disabled:opacity-50 disabled:cursor-not-allowed"

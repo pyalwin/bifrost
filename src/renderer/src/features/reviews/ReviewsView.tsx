@@ -1,14 +1,18 @@
 import { cn } from '../../lib/utils'
-import type { Review } from '../../types'
+import type { Review, ReviewComment } from '../../types'
 
 interface Props {
   reviews: Review[]
+  allComments: ReviewComment[]
   onStartNewReview: () => void
   onSelectReview: (id: string) => void
 }
 
-export function ReviewsView({ reviews, onStartNewReview, onSelectReview }: Props) {
-  const resolvedCount = (r: Review) => r.comments.filter(c => c.resolved).length
+export function ReviewsView({ reviews, allComments, onStartNewReview, onSelectReview }: Props) {
+  const resolvedCount = (r: Review) => {
+    const ids = new Set(r.comments.map(c => c.id))
+    return allComments.filter(c => ids.has(c.id) && c.resolved).length
+  }
 
   const statusDot = (status: Review['status']) => {
     const colors = {

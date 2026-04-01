@@ -118,7 +118,7 @@ function BranchRow({
 }
 
 export function Sidebar({
-  isOpen, onToggle, onNewSession, onResumeSession, activeSessionId, currentBranch,
+  isOpen, onToggle: _onToggle, onNewSession, onResumeSession, activeSessionId, currentBranch,
   pullRequest, onCreatePR,
 }: SidebarProps) {
   const [projects, setProjects] = useState<ProjectHierarchy[]>([])

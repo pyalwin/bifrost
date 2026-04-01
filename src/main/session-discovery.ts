@@ -29,7 +29,7 @@ function projectDirToPath(dir: string): string {
   const parts = cleaned.split('-')
 
   // Greedily reconstruct the path by checking what exists
-  let path = sep
+  let path: string = sep
   let i = 0
   while (i < parts.length) {
     // Try joining progressively more parts with '-' to find existing directories

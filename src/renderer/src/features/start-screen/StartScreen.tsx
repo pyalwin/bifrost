@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import {
   FolderOpen, Loader2, AlertCircle, ArrowLeft,
-  MessageSquare, Plus, Clock, ChevronRight, Terminal
+  MessageSquare, Plus, ChevronRight, Terminal
 } from 'lucide-react'
 import type { SessionInfo } from '../../types'
 

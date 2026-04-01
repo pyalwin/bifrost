@@ -9,9 +9,10 @@ const claudeAPI = {
   listSessionsGrouped: () => ipcRenderer.invoke('claude:list-sessions-grouped'),
   listSessionsForDir: (workingDir: string) => ipcRenderer.invoke('claude:list-sessions-for-dir', workingDir),
   listProjects: () => ipcRenderer.invoke('claude:list-projects'),
+  setModel: (model: string) => ipcRenderer.invoke('claude:set-model', model),
   cancelTurn: () => ipcRenderer.invoke('claude:cancel-turn'),
-  sendMessage: (text: string, images?: Array<{ base64: string; mediaType: string; name: string }>) =>
-    ipcRenderer.invoke('claude:send-message', text, images),
+  sendMessage: (text: string, images?: Array<{ base64: string; mediaType: string; name: string }>, model?: string) =>
+    ipcRenderer.invoke('claude:send-message', text, images, model),
   selectImages: () => ipcRenderer.invoke('claude:select-images'),
   sendControlResponse: (requestId: string, approved: boolean) =>
     ipcRenderer.invoke('claude:control-response', requestId, approved),
@@ -50,6 +51,8 @@ const claudeAPI = {
   saveReviews: (data: { reviews: unknown[]; comments: unknown[] }) => ipcRenderer.invoke('claude:save-reviews', data),
   loadReviews: () => ipcRenderer.invoke('claude:load-reviews'),
   getLocalDiffs: () => ipcRenderer.invoke('claude:get-local-diffs'),
+  getHeadSha: () => ipcRenderer.invoke('claude:get-head-sha'),
+  getDiffSince: (sha: string) => ipcRenderer.invoke('claude:get-diff-since', sha),
   getStagedFiles: () => ipcRenderer.invoke('claude:get-staged-files'),
   generateCommitMessage: () => ipcRenderer.invoke('claude:generate-commit-message'),
   stageAll: () => ipcRenderer.invoke('claude:stage-all'),
