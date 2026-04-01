@@ -26,7 +26,7 @@ const config: Config = {
         xl: '12px'
       },
       fontFamily: {
-        mono: ['SF Mono', 'Monaco', 'Menlo', 'monospace']
+        mono: ['JetBrains Mono', 'SF Mono', 'Monaco', 'Menlo', 'monospace']
       }
     }
   },
